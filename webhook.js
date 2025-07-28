@@ -1,19 +1,31 @@
+const express = require('express');
+const router = express.Router();
 const handleMessage = require('./messageHandling');
 
-module.exports = async function webhook(req, res) {
+router.post('/', async (req, res) => {
   const body = req.body;
 
   if (body.object) {
-    const entry = body.entry && body.entry[0];
-    const changes = entry && entry.changes && entry.changes[0];
-    const value = changes && changes.value;
-    const message = value && value.messages && value.messages[0];
+    try {
+      const entry = body.entry && body.entry[0];
+      const changes = entry && entry.changes && entry.changes[0];
+      const value = changes && changes.value;
+      const message = value && value.messages && value.messages[0];
 
-    if (message) {
-      await handleMessage(message);
+      if (message && message.text) {
+        const phoneNumberId = value.metadata && value.metadata.phone_number_id;
+        const from = message.from;
+        const text = message.text.body;
+        await handleMessage(phoneNumberId, from, text);
+      }
+      res.sendStatus(200);
+    } catch (err) {
+      console.error('Error al procesar el webhook:', err);
+      res.sendStatus(500);
     }
-    res.sendStatus(200);
   } else {
     res.sendStatus(404);
   }
-};
+});
+
+module.exports = router;

@@ -3,11 +3,11 @@ const axios = require('axios');
 
 const greetings = [
   'hola',
-  'buen d\u00eda',
+  'buenos d\u00edas',
   'buenas tardes',
   'hey',
-  'saludos',
   'qu\u00e9 tal',
+  'saludos',
 ];
 
 // Envia una plantilla a través de la API de WhatsApp
@@ -63,35 +63,47 @@ function ofertasDia(phoneId, to, ofertas) {
 }
 
 async function handleMessage(phone_number_id, from, text) {
-  const normalizedText = (text || '').toLowerCase();
-  console.log('Mensaje recibido:', normalizedText, 'de:', from);
+  const phoneId = phone_number_id;
+  const to = from;
+  const msgBody = (text || '').trim().toLowerCase();
 
-  if (greetings.includes(normalizedText)) {
-    await sendTemplate(phone_number_id, from, 'menu_inicio');
-    console.log('Respuesta enviada a', from);
-  } else if (normalizedText === 'ver men\u00fa de hoy') {
+  console.log('Texto recibido:', msgBody);
+
+  if (!phoneId || !to || !msgBody) {
+    console.warn('phoneId, to o msgBody no definidos');
+    return;
+  }
+
+  const isGreeting = greetings.includes(msgBody);
+  console.log('¿Se detectó saludo?', isGreeting);
+
+  if (isGreeting) {
+    await sendTemplate(phoneId, to, 'menu_inicio');
+    console.log('Respuesta enviada a', to);
+  } else if (msgBody === 'ver men\u00fa de hoy') {
     try {
       const { data } = await axios.get('http://127.0.0.1:80/rest/api/whats/menu.php');
       const platillos = Array.isArray(data) ? data : [];
-      await menuHoy(phone_number_id, from, platillos);
+      await menuHoy(phoneId, to, platillos);
     } catch (err) {
       console.error('Error fetching menu:', err.message);
-      await sendTemplate(phone_number_id, from, 'menu_inicio');
+      await sendTemplate(phoneId, to, 'menu_inicio');
     }
-  } else if (normalizedText === 'ver ofertas del d\u00eda') {
+  } else if (msgBody === 'ver ofertas del d\u00eda') {
     try {
       const { data } = await axios.get('http://127.0.0.1:80/rest/api/whats/ofertas.php');
       const ofertas = Array.isArray(data) ? data : [];
-      await ofertasDia(phone_number_id, from, ofertas);
+      await ofertasDia(phoneId, to, ofertas);
     } catch (err) {
       console.error('Error fetching ofertas:', err.message);
-      await sendTemplate(phone_number_id, from, 'menu_inicio');
+      await sendTemplate(phoneId, to, 'menu_inicio');
     }
-  } else if (normalizedText === 'salir') {
+  } else if (msgBody === 'salir') {
     // Could implement an exit option; for now, we just send menu again
-    await sendTemplate(phone_number_id, from, 'menu_inicio');
+    await sendTemplate(phoneId, to, 'menu_inicio');
   } else {
-    await sendTemplate(phone_number_id, from, 'menu_inicio');
+    console.log('Enviando plantilla como fallback');
+    await sendTemplate(phoneId, to, 'menu_inicio');
   }
 }
 

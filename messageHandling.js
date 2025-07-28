@@ -1,5 +1,5 @@
-const axios = require('axios');
 require('dotenv').config();
+const axios = require('axios');
 
 const greetings = [
   'hola',
@@ -14,12 +14,12 @@ const greetings = [
 async function sendTemplate(phoneId, to, templateName, components = []) {
   const token = process.env.WHATSAPP_TOKEN;
   if (!token) {
-    console.warn('WHATSAPP_TOKEN no definido');
+    console.error('❌ WHATSAPP_TOKEN no definido');
     return;
   }
 
   console.log(`Enviando plantilla '${templateName}' a ${to}`);
-  const url = `https://graph.facebook.com/v18.0/${phoneId}/messages`;
+  const url = `https://graph.facebook.com/v22.0/${phoneId}/messages`;
 
   await axios.post(
     url,

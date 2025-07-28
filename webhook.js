@@ -3,33 +3,32 @@ const router = express.Router();
 const handleMessage = require('./messageHandling');
 
 router.post('/', async (req, res) => {
-  const body = req.body;
+  try {
+    const body = req.body;
+    console.log(JSON.stringify(body, null, 2));
 
-  console.log(JSON.stringify(body, null, 2));
-
-  if (body.object) {
-    try {
+    if (body.object) {
       const entry = body.entry && body.entry[0];
       const changes = entry && entry.changes && entry.changes[0];
       const value = changes && changes.value;
       const message = value && value.messages && value.messages[0];
 
       if (message && message.text) {
-        const phoneNumberId = value?.metadata?.phone_number_id;
-        if (!phoneNumberId) {
+        const phone_number_id = value?.metadata?.phone_number_id;
+        console.log('📞 Enviando desde phone_number_id:', phone_number_id);
+        if (!phone_number_id) {
           console.warn('phone_number_id no encontrado en el webhook');
+        } else {
+          const from = message.from;
+          const text = message.text.body;
+          await handleMessage(phone_number_id, from, text);
         }
-        const from = message.from;
-        const text = message.text.body;
-        await handleMessage(phoneNumberId, from, text);
       }
-    } catch (err) {
-      console.error('Error al procesar el webhook:', err);
     }
-    res.sendStatus(200);
-  } else {
-    res.sendStatus(404);
+  } catch (err) {
+    console.error('❌ Error al enviar mensaje:', err);
   }
+  res.sendStatus(200);
 });
 
 module.exports = router;

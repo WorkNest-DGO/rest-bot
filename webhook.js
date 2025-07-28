@@ -5,6 +5,8 @@ const handleMessage = require('./messageHandling');
 router.post('/', async (req, res) => {
   const body = req.body;
 
+  console.log(JSON.stringify(body, null, 2));
+
   if (body.object) {
     try {
       const entry = body.entry && body.entry[0];
@@ -13,16 +15,18 @@ router.post('/', async (req, res) => {
       const message = value && value.messages && value.messages[0];
 
       if (message && message.text) {
-        const phoneNumberId = value.metadata && value.metadata.phone_number_id;
+        const phoneNumberId = value?.metadata?.phone_number_id;
+        if (!phoneNumberId) {
+          console.warn('phone_number_id no encontrado en el webhook');
+        }
         const from = message.from;
         const text = message.text.body;
         await handleMessage(phoneNumberId, from, text);
       }
-      res.sendStatus(200);
     } catch (err) {
       console.error('Error al procesar el webhook:', err);
-      res.sendStatus(500);
     }
+    res.sendStatus(200);
   } else {
     res.sendStatus(404);
   }

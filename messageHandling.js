@@ -19,7 +19,7 @@ async function handleMessage(phone_number_id, from, text) {
     console.log('Respuesta enviada a', from);
   } else if (normalizedText === 'ver men\u00fa de hoy') {
     try {
-      const { data } = await axios.get('http://127.0.0.1/rest/api/menu');
+      const { data } = await axios.get('http://127.0.0.1:80/rest/api/whats/menu.php');
       const platillos = Array.isArray(data) ? data : [];
       await menuHoy(from, platillos);
     } catch (err) {
@@ -28,7 +28,7 @@ async function handleMessage(phone_number_id, from, text) {
     }
   } else if (normalizedText === 'ver ofertas del d\u00eda') {
     try {
-      const { data } = await axios.get('http://127.0.0.1/rest/api/ofertas');
+      const { data } = await axios.get('http://127.0.0.1:80/rest/api/whats/ofertas.php');
       const ofertas = Array.isArray(data) ? data : [];
       await ofertasDia(from, ofertas);
     } catch (err) {

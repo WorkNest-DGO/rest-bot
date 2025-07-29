@@ -7,27 +7,23 @@ router.post('/', async (req, res) => {
     const body = req.body;
     console.log(JSON.stringify(body, null, 2));
 
-    if (body.object) {
-      const entry = body.entry && body.entry[0];
-      const changes = entry && entry.changes && entry.changes[0];
-      const value = changes && changes.value;
-      const message = value && value.messages && value.messages[0];
+    const entry = body?.entry?.[0];
+    const change = entry?.changes?.[0];
+    const value = change?.value;
+    const message = value?.messages?.[0];
 
-      if (message && message.text) {
-        const phone_number_id = value?.metadata?.phone_number_id;
-        console.log('📞 Enviando desde phone_number_id:', phone_number_id);
-        if (!phone_number_id) {
-          console.warn('phone_number_id no encontrado en el webhook');
-        } else {
-          const from = message.from;
-          const text = message.text.body;
-          await handleMessage(phone_number_id, from, text);
-        }
-      }
+    const phoneId = value?.metadata?.phone_number_id;
+    const from = message?.from;
+    const msgBody = message?.text?.body;
+
+    if (msgBody) {
+      console.log(`📩 Webhook message from ${from}: ${msgBody}`);
+      await handleMessage(phoneId, from, msgBody);
     }
   } catch (err) {
-    console.error('❌ Error al enviar mensaje:', err);
+    console.error('❌ Error al procesar webhook:', err);
   }
+
   res.sendStatus(200);
 });
 

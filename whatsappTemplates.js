@@ -1,53 +1,44 @@
 const axios = require('axios');
 
-const WHATSAPP_TOKEN = process.env.WHATSAPP_TOKEN;
-const PHONE_NUMBER_ID = process.env.PHONE_NUMBER_ID;
-const API_URL = `https://graph.facebook.com/v18.0/${PHONE_NUMBER_ID}/messages`;
+async function sendTemplate(templateName, phoneId, to, components = []) {
+  const token = process.env.WHATSAPP_TOKEN;
 
-function sendTemplate(to, templateName, components = []) {
-  return axios.post(
-    API_URL,
-    {
-      messaging_product: 'whatsapp',
-      to,
-      type: 'template',
-      template: {
-        name: templateName,
-        language: { code: 'es_MX' },
-        components,
+  if (!token) {
+    console.warn('⚠️  WHATSAPP_TOKEN no definido');
+    return;
+  }
+
+  if (!phoneId) {
+    console.warn('⚠️  phoneId no definido');
+    return;
+  }
+
+  const url = `https://graph.facebook.com/v23.0/${phoneId}/messages`;
+
+  try {
+    await axios.post(
+      url,
+      {
+        messaging_product: 'whatsapp',
+        to,
+        type: 'template',
+        template: {
+          name: templateName,
+          language: { code: 'es_MX' },
+          components,
+        },
       },
-    },
-    {
-      headers: {
-        Authorization: `Bearer ${WHATSAPP_TOKEN}`,
-        'Content-Type': 'application/json',
-      },
-    }
-  );
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      }
+    );
+    console.log(`✅ Plantilla '${templateName}' enviada a ${to}`);
+  } catch (err) {
+    console.error('❌ Error enviando plantilla:', err.response?.data || err.message);
+  }
 }
 
-function menuInicio(to) {
-  return sendTemplate(to, 'menu_inicio');
-}
-
-function menuHoy(to, platillos) {
-  const bodyText = platillos.join('\n');
-  return sendTemplate(to, 'menu_hoy', [
-    {
-      type: 'body',
-      parameters: [{ type: 'text', text: bodyText }],
-    },
-  ]);
-}
-
-function ofertasDia(to, ofertas) {
-  const bodyText = ofertas.join('\n');
-  return sendTemplate(to, 'ofertas_dia', [
-    {
-      type: 'body',
-      parameters: [{ type: 'text', text: bodyText }],
-    },
-  ]);
-}
-
-module.exports = { sendTemplate, menuInicio, menuHoy, ofertasDia };
+module.exports = { sendTemplate };

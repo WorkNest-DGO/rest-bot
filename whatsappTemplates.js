@@ -1,7 +1,7 @@
 const axios = require('axios');
 const fs = require('fs');
 
-async function sendTemplate(templateName, to, components) {
+async function sendTemplate(templateName, to, components = []) {
   const token = process.env.WHATSAPP_TOKEN;
   const phoneId = process.env.PHONE_NUMBER_ID;
 

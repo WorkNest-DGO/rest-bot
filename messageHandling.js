@@ -54,59 +54,77 @@ async function handleMessage(phoneId, from, msgBody) {
   } else if (normalized === 'menu_hoy') {
     try {
       const { data } = await axios.get(
-        'https://grp-ia.com/bitacora-residentes/ofertas.php'
+        "https://grp-ia.com/bitacora-residentes/ofertas.php"
       );
+
+      // 🪵 Log de depuración para ver qué trae el API
+      console.log("🪵 debug_get_log:", JSON.stringify(data, null, 2));
+
+      // Validación de estructura
+      if (!data || !Array.isArray(data.menu)) {
+        throw new Error("Formato inesperado: 'menu' no es arreglo o está ausente");
+      }
+
       const platillos = data.menu
         .map(item => `${item.nombre} $${item.precio}`)
-        .join(' | ');
+        .join(" | ");
 
-      await sendTemplate('menu_hoy', to, [
+      await sendTemplate("menu_hoy", to, [
         {
-          type: 'body',
+          type: "body",
           parameters: [
             {
-              type: 'text',
-              text: platillos,
-            },
-          ],
-        },
+              type: "text",
+              text: platillos
+            }
+          ]
+        }
       ]);
     } catch (err) {
-      console.error('❌ Error fetching menu:', err.message);
+      console.error("❌ Error fetching menu:", err.message);
       fs.appendFileSync(
-        'api_log.txt',
+        "api_log.txt",
         `❌ Error fetching menu: ${err.message}\n`
       );
-      await sendText(to, 'No pudimos consultar el menú en este momento.');
+      await sendText(to, "No pudimos consultar el menú en este momento.");
     }
     return;
   } else if (normalized === 'ofertas_dia') {
     try {
       const { data } = await axios.get(
-        'https://grp-ia.com/bitacora-residentes/ofertas.php'
+        "https://grp-ia.com/bitacora-residentes/ofertas.php"
       );
+
+      // 🪵 Log de depuración para ver qué trae el API
+      console.log("🪵 debug_get_log:", JSON.stringify(data, null, 2));
+
+      // Validación de estructura
+      if (!data || !Array.isArray(data.ofertas)) {
+        throw new Error("Formato inesperado: 'ofertas' no es arreglo o está ausente");
+      }
+
       const ofertas = data.ofertas
         .map(item => `${item.descripcion}`)
-        .join(' | ');
+        .join(" | ");
 
-      await sendTemplate('ofertas_dia', to, [
+      await sendTemplate("ofertas_dia", to, [
         {
-          type: 'body',
+          type: "body",
           parameters: [
             {
-              type: 'text',
-              text: ofertas,
-            },
-          ],
-        },
+              type: "text",
+              text: ofertas
+            }
+          ]
+        }
       ]);
     } catch (err) {
-      console.error('❌ Error fetching ofertas:', err.message);
+      console.error("❌ Error fetching ofertas:", err.message);
       fs.appendFileSync(
-        'api_log.txt',
+        "api_log.txt",
         `❌ Error fetching ofertas: ${err.message}\n`
       );
-      await sendText(to, 'No hay ofertas disponibles.');
+      await sendText(to, "No hay ofertas disponibles.");
     }
     return;
   } else if (normalized === 'salir') {

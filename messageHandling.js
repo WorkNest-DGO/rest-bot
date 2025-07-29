@@ -1,5 +1,6 @@
 require("dotenv").config();
 const axios = require('axios');
+const fs = require('fs');
 const { sendTemplate } = require('./whatsappTemplates');
 
 const greetings = [
@@ -34,22 +35,30 @@ function ofertasDia(phoneId, to, ofertas) {
 
 async function handleMessage(phoneId, from, msgBody) {
   if (!phoneId || !from || !msgBody) {
-    console.warn('phoneId, to o msgBody no definidos');
+    console.warn('phoneId, from o msgBody no definidos');
+    fs.appendFileSync('logs.txt', 'phoneId, from o msgBody no definidos\n');
     return;
   }
 
   const to = from.startsWith("521") ? from.replace("521", "52") : from;
-  console.log("📞 Número corregido para envío:", to);
+
+  console.log('📥 Mensaje recibido:', msgBody);
+  fs.appendFileSync('logs.txt', `📥 Mensaje recibido: ${msgBody}\n`);
+
+  console.log('📞 Enviando a:', to);
+  fs.appendFileSync('logs.txt', `📞 Enviando a: ${to}\n`);
 
   const normalized = String(msgBody).trim().toLowerCase();
-  console.log("📥 Mensaje recibido:", normalized);
 
   const isGreeting = greetings.includes(normalized);
   console.log('¿Se detectó saludo?', isGreeting);
+  fs.appendFileSync('logs.txt', `¿Se detectó saludo? ${isGreeting}\n`);
 
   if (isGreeting) {
     console.log('Enviando plantilla de saludo');
+    fs.appendFileSync('logs.txt', 'Enviando plantilla de saludo\n');
     console.log("📤 Enviando plantilla 'menu_inicio'");
+    fs.appendFileSync('logs.txt', "📤 Enviando plantilla 'menu_inicio'\n");
     await sendTemplate('menu_inicio', phoneId, to);
   } else if (normalized === 'ver men\u00fa de hoy') {
     try {
@@ -58,7 +67,9 @@ async function handleMessage(phoneId, from, msgBody) {
       await menuHoy(phoneId, to, platillos);
     } catch (err) {
       console.error('Error fetching menu:', err.message);
+      fs.appendFileSync('logs.txt', `Error fetching menu: ${err.message}\n`);
       console.log("📤 Enviando plantilla 'menu_inicio'");
+      fs.appendFileSync('logs.txt', "📤 Enviando plantilla 'menu_inicio'\n");
       await sendTemplate('menu_inicio', phoneId, to);
     }
   } else if (normalized === 'ver ofertas del d\u00eda') {
@@ -68,16 +79,21 @@ async function handleMessage(phoneId, from, msgBody) {
       await ofertasDia(phoneId, to, ofertas);
     } catch (err) {
       console.error('Error fetching ofertas:', err.message);
+      fs.appendFileSync('logs.txt', `Error fetching ofertas: ${err.message}\n`);
       console.log("📤 Enviando plantilla 'menu_inicio'");
+      fs.appendFileSync('logs.txt', "📤 Enviando plantilla 'menu_inicio'\n");
       await sendTemplate('menu_inicio', phoneId, to);
     }
   } else if (normalized === 'salir') {
     // Could implement an exit option; for now, we just send menu again
     console.log("📤 Enviando plantilla 'menu_inicio'");
+    fs.appendFileSync('logs.txt', "📤 Enviando plantilla 'menu_inicio'\n");
     await sendTemplate('menu_inicio', phoneId, to);
   } else {
     console.log('Enviando plantilla como fallback');
+    fs.appendFileSync('logs.txt', 'Enviando plantilla como fallback\n');
     console.log("📤 Enviando plantilla 'menu_inicio'");
+    fs.appendFileSync('logs.txt', "📤 Enviando plantilla 'menu_inicio'\n");
     await sendTemplate('menu_inicio', phoneId, to);
   }
 }

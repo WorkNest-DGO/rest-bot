@@ -1,20 +1,24 @@
 const axios = require('axios');
+const fs = require('fs');
 
 async function sendTemplate(templateName, phoneId, to) {
   const token = process.env.WHATSAPP_TOKEN;
 
   if (!token) {
-    console.error('⚠️  WHATSAPP_TOKEN no definido');
+    console.warn('⚠️  WHATSAPP_TOKEN no definido');
+    fs.appendFileSync('logs.txt', '⚠️  WHATSAPP_TOKEN no definido\n');
     return;
   }
 
   if (!phoneId) {
-    console.error('⚠️  phoneId no definido');
+    console.warn('⚠️  phoneId no definido');
+    fs.appendFileSync('logs.txt', '⚠️  phoneId no definido\n');
     return;
   }
 
   if (!to) {
-    console.error('⚠️  to no definido');
+    console.warn('⚠️  to no definido');
+    fs.appendFileSync('logs.txt', '⚠️  to no definido\n');
     return;
   }
 
@@ -22,6 +26,7 @@ async function sendTemplate(templateName, phoneId, to) {
 
   try {
     console.log("🚀 Enviando plantilla:", templateName, "a", to);
+    fs.appendFileSync('logs.txt', `Enviando plantilla ${templateName} a ${to}\n`);
     await axios.post(
       url,
       {
@@ -42,8 +47,10 @@ async function sendTemplate(templateName, phoneId, to) {
       }
     );
     console.log(`✅ Plantilla '${templateName}' enviada a ${to}`);
+    fs.appendFileSync('logs.txt', `✅ Plantilla '${templateName}' enviada a ${to}\n`);
   } catch (err) {
     console.error('❌ Error enviando plantilla:', err.response?.data || err.message);
+    fs.appendFileSync('logs.txt', `Error enviando plantilla: ${err.response?.data || err.message}\n`);
   }
 }
 

@@ -2,6 +2,7 @@ require("dotenv").config();
 const express = require("express");
 const bodyParser = require("body-parser");
 const cors = require("cors");
+const fs = require("fs");
 const { verifyWebhook } = require("./webhookVerification");
 const webhookRoutes = require("./webhook");
 
@@ -19,4 +20,5 @@ app.use("/webhook", webhookRoutes);
 
 app.listen(PORT, () => {
   console.log(`Webhook listening on port ${PORT}`);
+  fs.appendFileSync('logs.txt', `Webhook listening on port ${PORT}\n`);
 });

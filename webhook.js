@@ -32,6 +32,11 @@ router.post('/', async (req, res) => {
     if (!msgBody && message?.interactive?.button_reply?.id) {
       msgBody = message.interactive.button_reply.id;
     }
+    msgBody = msgBody?.toLowerCase();
+
+    const msgType = message?.type;
+    console.log(`\ud83d\udce4 Tipo de mensaje recibido: ${msgType}`);
+    fs.appendFileSync('api_log.txt', `Tipo de mensaje recibido: ${msgType}\n`);
 
     console.log('🆔 phoneId:', phoneId);
     console.log('📱 from:', from);
@@ -43,7 +48,7 @@ router.post('/', async (req, res) => {
     if (!phoneId || !from || !msgBody) {
       console.log('⚠️ Faltan datos esenciales en el mensaje');
       fs.appendFileSync('api_log.txt', '⚠️ Faltan datos esenciales en el mensaje\n');
-    } else if (message?.type === 'text') {
+    } else {
       await handleMessage(phoneId, from, msgBody);
     }
   } catch (err) {

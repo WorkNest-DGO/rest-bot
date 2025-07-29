@@ -18,27 +18,29 @@ router.get('/', (req, res) => {
 
 router.post('/', async (req, res) => {
   try {
-    console.log('📨 Webhook recibido:', JSON.stringify(req.body, null, 2));
-    fs.appendFileSync('logs.txt', '📨 Mensaje real recibido de WhatsApp\n' + JSON.stringify(req.body) + '\n');
+    console.log('📨 Webhook recibido');
+    fs.appendFileSync('logs.txt', '📨 Webhook recibido\n');
 
-    const body = req.body;
-    const entry = body?.entry?.[0];
-    const change = entry?.changes?.[0];
-    const value = change?.value;
+    const entry = req.body.entry?.[0];
+    const changes = entry?.changes?.[0];
+    const value = changes?.value;
+
     const message = value?.messages?.[0];
-
     const phoneId = value?.metadata?.phone_number_id;
     const from = message?.from;
     const msgBody = message?.text?.body;
 
     console.log('🆔 phoneId:', phoneId);
-    fs.appendFileSync('logs.txt', `🆔 phoneId: ${phoneId}\n`);
     console.log('📱 from:', from);
-    fs.appendFileSync('logs.txt', `📱 from: ${from}\n`);
     console.log('💬 msgBody:', msgBody);
+    fs.appendFileSync('logs.txt', `🆔 phoneId: ${phoneId}\n`);
+    fs.appendFileSync('logs.txt', `📱 from: ${from}\n`);
     fs.appendFileSync('logs.txt', `💬 msgBody: ${msgBody}\n`);
 
-    if (message?.type === 'text' && phoneId && from && msgBody) {
+    if (!phoneId || !from || !msgBody) {
+      console.log('⚠️ Faltan datos esenciales en el mensaje');
+      fs.appendFileSync('logs.txt', '⚠️ Faltan datos esenciales en el mensaje\n');
+    } else if (message?.type === 'text') {
       await handleMessage(phoneId, from, msgBody);
     }
   } catch (err) {

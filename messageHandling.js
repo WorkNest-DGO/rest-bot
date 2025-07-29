@@ -58,7 +58,7 @@ async function handleMessage(phoneId, from, msgBody) {
     console.log("📤 Enviando plantilla 'menu_inicio'");
     fs.appendFileSync('api_log.txt', "📤 Enviando plantilla 'menu_inicio'\n");
     await sendTemplate('menu_inicio', phoneId, to);
-  } else if (normalized === 'ver men\u00fa de hoy') {
+  } else if (normalized === 'ver men\u00fa de hoy' || normalized === 'menu_hoy') {
     try {
       const { data } = await axios.get('https://grp-ia.com/bitacora-residentes/menu.php');
       const platillos = Array.isArray(data) ? data : [];
@@ -70,7 +70,7 @@ async function handleMessage(phoneId, from, msgBody) {
       fs.appendFileSync('api_log.txt', "📤 Enviando plantilla 'menu_inicio'\n");
       await sendTemplate('menu_inicio', phoneId, to);
     }
-  } else if (normalized === 'ver ofertas del d\u00eda') {
+  } else if (normalized === 'ver ofertas del d\u00eda' || normalized === 'ofertas_dia') {
     try {
       const { data } = await axios.get('https://grp-ia.com/bitacora-residentes/ofertas.php');
       const ofertas = Array.isArray(data) ? data : [];

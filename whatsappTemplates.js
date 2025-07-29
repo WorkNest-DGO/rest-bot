@@ -1,7 +1,7 @@
 const axios = require('axios');
 const fs = require('fs');
 
-async function sendTemplate(templateName, phoneId, to) {
+async function sendTemplate(templateName, phoneId, to, components = []) {
   const token = process.env.WHATSAPP_TOKEN;
 
   if (!token) {
@@ -37,7 +37,7 @@ async function sendTemplate(templateName, phoneId, to) {
         template: {
           name: templateName,
           language: { code: 'es_MX' },
-          components: [],
+          components,
         },
       },
       {

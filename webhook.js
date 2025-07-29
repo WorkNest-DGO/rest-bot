@@ -3,10 +3,23 @@ const fs = require('fs');
 const router = express.Router();
 const handleMessage = require('./messageHandling');
 
+// Meta validation endpoint
+router.get('/', (req, res) => {
+  const mode = req.query['hub.mode'];
+  const token = req.query['hub.verify_token'];
+  const challenge = req.query['hub.challenge'];
+
+  const logEntry = `🧪 [GET webhook] mode: ${mode}, token: ${token}, challenge: ${challenge}`;
+  console.log(logEntry);
+  fs.appendFileSync('logs.txt', logEntry + '\n');
+
+  res.status(200).send(challenge);
+});
+
 router.post('/', async (req, res) => {
   try {
-    console.log('📨 Webhook recibido');
-    fs.appendFileSync('logs.txt', '📨 Webhook recibido\n');
+    console.log('📨 Webhook recibido:', JSON.stringify(req.body, null, 2));
+    fs.appendFileSync('logs.txt', '📨 Mensaje real recibido de WhatsApp\n' + JSON.stringify(req.body) + '\n');
 
     const body = req.body;
     const entry = body?.entry?.[0];

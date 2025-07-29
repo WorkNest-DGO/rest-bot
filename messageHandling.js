@@ -1,7 +1,7 @@
 require("dotenv").config();
 const axios = require('axios');
 const fs = require('fs');
-const { sendTemplate } = require('./whatsappTemplates');
+const { sendTemplate, sendText } = require('./whatsappTemplates');
 
 const greetings = [
   'hola',
@@ -52,30 +52,49 @@ async function handleMessage(phoneId, from, msgBody) {
     fs.appendFileSync('api_log.txt', "📤 Enviando plantilla 'menu_inicio'\n");
     await sendTemplate('menu_inicio', to);
   } else if (normalized === 'menu_hoy') {
-    const menuItems = '• Enchiladas\n• Tacos dorados\n• Agua de horchata';
-    await sendTemplate('menu_hoy', to, [
-      {
-        type: 'body',
-        parameters: [
-          {
-            type: 'text',
-            text: menuItems,
-          },
-        ],
-      },
-    ]);
-  } else if (normalized === 'ver ofertas del d\u00eda' || normalized === 'ofertas_dia') {
     try {
-      const { data } = await axios.get('https://grp-ia.com/bitacora-residentes/ofertas.php');
-      const ofertas = Array.isArray(data) ? data : [];
-      await ofertasDia(to, ofertas);
+      const { data } = await axios.get('http://localhost:3001/api/menu');
+      const lista = data.menu.map(item => `\u2022 ${item.nombre} ($${item.precio})`).join('\n');
+
+      await sendTemplate('menu_hoy', to, [
+        {
+          type: 'body',
+          parameters: [
+            {
+              type: 'text',
+              text: lista
+            }
+          ]
+        }
+      ]);
+    } catch (err) {
+      console.error('Error fetching menu:', err.message);
+      fs.appendFileSync('api_log.txt', `Error fetching menu: ${err.message}\n`);
+      await sendText(to, 'No hay datos de menú disponibles.');
+    }
+    return;
+  } else if (normalized === 'ofertas_dia') {
+    try {
+      const { data } = await axios.get('http://localhost:3001/api/ofertas');
+      const lista = data.ofertas.map(item => `\u2022 ${item.descripcion}`).join('\n');
+
+      await sendTemplate('ofertas_dia', to, [
+        {
+          type: 'body',
+          parameters: [
+            {
+              type: 'text',
+              text: lista
+            }
+          ]
+        }
+      ]);
     } catch (err) {
       console.error('Error fetching ofertas:', err.message);
       fs.appendFileSync('api_log.txt', `Error fetching ofertas: ${err.message}\n`);
-      console.log("📤 Enviando plantilla 'menu_inicio'");
-      fs.appendFileSync('api_log.txt', "📤 Enviando plantilla 'menu_inicio'\n");
-      await sendTemplate('menu_inicio', to);
+      await sendText(to, 'No hay ofertas disponibles.');
     }
+    return;
   } else if (normalized === 'salir') {
     // Could implement an exit option; for now, we just send menu again
     console.log("📤 Enviando plantilla 'menu_inicio'");

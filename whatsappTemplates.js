@@ -37,11 +37,9 @@ async function sendTemplate(templateName, to, components) {
       template: {
         name: templateName,
         language: { code: 'es_MX' },
-      },
+        ...(components && components.length > 0 ? { components } : {})
+      }
     };
-    if (Array.isArray(components) && components.length > 0) {
-      payload.template.components = components;
-    }
 
     await axios.post(
       url,
@@ -62,4 +60,43 @@ async function sendTemplate(templateName, to, components) {
   }
 }
 
-module.exports = { sendTemplate };
+async function sendText(to, text) {
+  const token = process.env.WHATSAPP_TOKEN;
+  const phoneId = process.env.PHONE_NUMBER_ID;
+
+  if (!token || !phoneId || !to) {
+    const warn = '⚠️ Falta token, phoneId o destinatario';
+    console.warn(warn);
+    fs.appendFileSync('api_log.txt', warn + '\n');
+    return;
+  }
+
+  const url = `https://graph.facebook.com/v23.0/${phoneId}/messages`;
+
+  try {
+    const log = `📤 Enviando texto a ${to}`;
+    console.log(log);
+    fs.appendFileSync('api_log.txt', log + '\n');
+
+    await axios.post(
+      url,
+      {
+        messaging_product: 'whatsapp',
+        to,
+        text: { body: text }
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      }
+    );
+    fs.appendFileSync('api_log.txt', `✅ Texto enviado a ${to}\n`);
+  } catch (error) {
+    console.error('❌ Error enviando texto:', error.response?.data || error.message);
+    fs.appendFileSync('api_log.txt', `❌ Error enviando texto a ${to}: ${error.message}\n`);
+  }
+}
+
+module.exports = { sendTemplate, sendText };

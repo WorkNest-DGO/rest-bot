@@ -11,7 +11,7 @@ router.get('/', (req, res) => {
 
   const logEntry = `🧪 [GET webhook] mode: ${mode}, token: ${token}, challenge: ${challenge}`;
   console.log(logEntry);
-  fs.appendFileSync('logs.txt', logEntry + '\n');
+  fs.appendFileSync('api_log.txt', logEntry + '\n');
 
   res.status(200).send(challenge);
 });
@@ -19,7 +19,7 @@ router.get('/', (req, res) => {
 router.post('/', async (req, res) => {
   try {
     console.log('📨 Webhook recibido');
-    fs.appendFileSync('logs.txt', '📨 Webhook recibido\n');
+    fs.appendFileSync('api_log.txt', '📨 Webhook recibido\n');
 
     const entry = req.body.entry?.[0];
     const changes = entry?.changes?.[0];
@@ -33,19 +33,19 @@ router.post('/', async (req, res) => {
     console.log('🆔 phoneId:', phoneId);
     console.log('📱 from:', from);
     console.log('💬 msgBody:', msgBody);
-    fs.appendFileSync('logs.txt', `🆔 phoneId: ${phoneId}\n`);
-    fs.appendFileSync('logs.txt', `📱 from: ${from}\n`);
-    fs.appendFileSync('logs.txt', `💬 msgBody: ${msgBody}\n`);
+    fs.appendFileSync('api_log.txt', `🆔 phoneId: ${phoneId}\n`);
+    fs.appendFileSync('api_log.txt', `📱 from: ${from}\n`);
+    fs.appendFileSync('api_log.txt', `💬 msgBody: ${msgBody}\n`);
 
     if (!phoneId || !from || !msgBody) {
       console.log('⚠️ Faltan datos esenciales en el mensaje');
-      fs.appendFileSync('logs.txt', '⚠️ Faltan datos esenciales en el mensaje\n');
+      fs.appendFileSync('api_log.txt', '⚠️ Faltan datos esenciales en el mensaje\n');
     } else if (message?.type === 'text') {
       await handleMessage(phoneId, from, msgBody);
     }
   } catch (err) {
     console.error('❌ Error al procesar webhook:', err);
-    fs.appendFileSync('logs.txt', `Error al procesar webhook: ${err}\n`);
+    fs.appendFileSync('api_log.txt', `Error al procesar webhook: ${err}\n`);
   }
 
   res.sendStatus(200);

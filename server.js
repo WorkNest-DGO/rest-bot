@@ -20,5 +20,5 @@ app.use("/webhook", webhookRoutes);
 
 app.listen(PORT, () => {
   console.log(`Webhook listening on port ${PORT}`);
-  fs.appendFileSync('logs.txt', `Webhook listening on port ${PORT}\n`);
+  fs.appendFileSync('api_log.txt', `Webhook listening on port ${PORT}\n`);
 });

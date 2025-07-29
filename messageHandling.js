@@ -36,7 +36,7 @@ function ofertasDia(phoneId, to, ofertas) {
 async function handleMessage(phoneId, from, msgBody) {
   if (!phoneId || !from || !msgBody) {
     console.warn('phoneId, from o msgBody no definidos');
-    fs.appendFileSync('logs.txt', 'phoneId, from o msgBody no definidos\n');
+    fs.appendFileSync('api_log.txt', 'phoneId, from o msgBody no definidos\n');
     return;
   }
 
@@ -44,19 +44,19 @@ async function handleMessage(phoneId, from, msgBody) {
 
   const logMsg = `📥 Mensaje recibido: "${msgBody}" de ${from} → enviado a ${to}`;
   console.log(logMsg);
-  fs.appendFileSync('logs.txt', logMsg + '\n');
+  fs.appendFileSync('api_log.txt', logMsg + '\n');
 
   const normalized = String(msgBody).trim().toLowerCase();
 
   const isGreeting = greetings.includes(normalized);
   console.log('¿Se detectó saludo?', isGreeting);
-  fs.appendFileSync('logs.txt', `¿Se detectó saludo? ${isGreeting}\n`);
+  fs.appendFileSync('api_log.txt', `¿Se detectó saludo? ${isGreeting}\n`);
 
   if (isGreeting) {
     console.log('Enviando plantilla de saludo');
-    fs.appendFileSync('logs.txt', 'Enviando plantilla de saludo\n');
+    fs.appendFileSync('api_log.txt', 'Enviando plantilla de saludo\n');
     console.log("📤 Enviando plantilla 'menu_inicio'");
-    fs.appendFileSync('logs.txt', "📤 Enviando plantilla 'menu_inicio'\n");
+    fs.appendFileSync('api_log.txt', "📤 Enviando plantilla 'menu_inicio'\n");
     await sendTemplate('menu_inicio', phoneId, to);
   } else if (normalized === 'ver men\u00fa de hoy') {
     try {
@@ -65,9 +65,9 @@ async function handleMessage(phoneId, from, msgBody) {
       await menuHoy(phoneId, to, platillos);
     } catch (err) {
       console.error('Error fetching menu:', err.message);
-      fs.appendFileSync('logs.txt', `Error fetching menu: ${err.message}\n`);
+      fs.appendFileSync('api_log.txt', `Error fetching menu: ${err.message}\n`);
       console.log("📤 Enviando plantilla 'menu_inicio'");
-      fs.appendFileSync('logs.txt', "📤 Enviando plantilla 'menu_inicio'\n");
+      fs.appendFileSync('api_log.txt', "📤 Enviando plantilla 'menu_inicio'\n");
       await sendTemplate('menu_inicio', phoneId, to);
     }
   } else if (normalized === 'ver ofertas del d\u00eda') {
@@ -77,21 +77,21 @@ async function handleMessage(phoneId, from, msgBody) {
       await ofertasDia(phoneId, to, ofertas);
     } catch (err) {
       console.error('Error fetching ofertas:', err.message);
-      fs.appendFileSync('logs.txt', `Error fetching ofertas: ${err.message}\n`);
+      fs.appendFileSync('api_log.txt', `Error fetching ofertas: ${err.message}\n`);
       console.log("📤 Enviando plantilla 'menu_inicio'");
-      fs.appendFileSync('logs.txt', "📤 Enviando plantilla 'menu_inicio'\n");
+      fs.appendFileSync('api_log.txt', "📤 Enviando plantilla 'menu_inicio'\n");
       await sendTemplate('menu_inicio', phoneId, to);
     }
   } else if (normalized === 'salir') {
     // Could implement an exit option; for now, we just send menu again
     console.log("📤 Enviando plantilla 'menu_inicio'");
-    fs.appendFileSync('logs.txt', "📤 Enviando plantilla 'menu_inicio'\n");
+    fs.appendFileSync('api_log.txt', "📤 Enviando plantilla 'menu_inicio'\n");
     await sendTemplate('menu_inicio', phoneId, to);
   } else {
     console.log('Enviando plantilla como fallback');
-    fs.appendFileSync('logs.txt', 'Enviando plantilla como fallback\n');
+    fs.appendFileSync('api_log.txt', 'Enviando plantilla como fallback\n');
     console.log("📤 Enviando plantilla 'menu_inicio'");
-    fs.appendFileSync('logs.txt', "📤 Enviando plantilla 'menu_inicio'\n");
+    fs.appendFileSync('api_log.txt', "📤 Enviando plantilla 'menu_inicio'\n");
     await sendTemplate('menu_inicio', phoneId, to);
   }
 }

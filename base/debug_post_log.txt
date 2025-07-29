@@ -1,0 +1,24 @@
+2024-12-09T03:48:47.050Z - POST Request: {
+  "entry": [
+    {
+      "changes": [
+        {
+          "value": {
+            "messages": [
+              {
+                "from": "526183021446",
+                "interactive": {
+                  "type": "button_reply",
+                  "button_reply": {
+                    "id": "btn_realizar_pago",
+                    "title": "Realizar pago"
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

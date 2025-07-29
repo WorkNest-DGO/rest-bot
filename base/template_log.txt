@@ -1,0 +1,2 @@
+2024-12-09T03:48:47.778Z - Enviado: {"messaging_product":"whatsapp","to":"526183021446","type":"template","template":{"name":"calculo","language":{"code":"es_MX"},"components":[{"type":"header","parameters":[{"type":"image","image":{"link":"https://grp-ia.com/report-whats-app/pdf/tlaquepaque.jpg"}}]}]}}
+Respuesta: {"messaging_product":"whatsapp","contacts":[{"input":"526183021446","wa_id":"5216183021446"}],"messages":[{"id":"wamid.HBgNNTIxNjE4MzAyMTQ0NhUCABEYEjFDMTZCM0Y3QzcxMzk5MDk4QgA=","message_status":"accepted"}]}

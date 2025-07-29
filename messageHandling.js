@@ -1,4 +1,4 @@
-require('dotenv').config();
+require("dotenv").config();
 const axios = require('axios');
 const { sendTemplate } = require('./whatsappTemplates');
 
@@ -32,21 +32,24 @@ function ofertasDia(phoneId, to, ofertas) {
   ]);
 }
 
-async function handleMessage(phoneId, to, msgBody) {
-  if (!phoneId || !to || !msgBody) {
+async function handleMessage(phoneId, from, msgBody) {
+  if (!phoneId || !from || !msgBody) {
     console.warn('phoneId, to o msgBody no definidos');
     return;
   }
 
-  const normalized = String(msgBody).trim().toLowerCase();
+  const to = from.startsWith("521") ? from.replace("521", "52") : from;
+  console.log("📞 Número corregido para envío:", to);
 
-  console.log('📩 Mensaje recibido:', normalized, 'de', to);
+  const normalized = String(msgBody).trim().toLowerCase();
+  console.log("📥 Mensaje recibido:", normalized);
 
   const isGreeting = greetings.includes(normalized);
   console.log('¿Se detectó saludo?', isGreeting);
 
   if (isGreeting) {
     console.log('Enviando plantilla de saludo');
+    console.log("📤 Enviando plantilla 'menu_inicio'");
     await sendTemplate('menu_inicio', phoneId, to);
   } else if (normalized === 'ver men\u00fa de hoy') {
     try {
@@ -55,6 +58,7 @@ async function handleMessage(phoneId, to, msgBody) {
       await menuHoy(phoneId, to, platillos);
     } catch (err) {
       console.error('Error fetching menu:', err.message);
+      console.log("📤 Enviando plantilla 'menu_inicio'");
       await sendTemplate('menu_inicio', phoneId, to);
     }
   } else if (normalized === 'ver ofertas del d\u00eda') {
@@ -64,13 +68,16 @@ async function handleMessage(phoneId, to, msgBody) {
       await ofertasDia(phoneId, to, ofertas);
     } catch (err) {
       console.error('Error fetching ofertas:', err.message);
+      console.log("📤 Enviando plantilla 'menu_inicio'");
       await sendTemplate('menu_inicio', phoneId, to);
     }
   } else if (normalized === 'salir') {
     // Could implement an exit option; for now, we just send menu again
+    console.log("📤 Enviando plantilla 'menu_inicio'");
     await sendTemplate('menu_inicio', phoneId, to);
   } else {
     console.log('Enviando plantilla como fallback');
+    console.log("📤 Enviando plantilla 'menu_inicio'");
     await sendTemplate('menu_inicio', phoneId, to);
   }
 }

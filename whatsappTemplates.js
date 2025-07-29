@@ -1,21 +1,27 @@
 const axios = require('axios');
 
-async function sendTemplate(templateName, phoneId, to, components = []) {
+async function sendTemplate(templateName, phoneId, to) {
   const token = process.env.WHATSAPP_TOKEN;
 
   if (!token) {
-    console.warn('⚠️  WHATSAPP_TOKEN no definido');
+    console.error('⚠️  WHATSAPP_TOKEN no definido');
     return;
   }
 
   if (!phoneId) {
-    console.warn('⚠️  phoneId no definido');
+    console.error('⚠️  phoneId no definido');
+    return;
+  }
+
+  if (!to) {
+    console.error('⚠️  to no definido');
     return;
   }
 
   const url = `https://graph.facebook.com/v23.0/${phoneId}/messages`;
 
   try {
+    console.log("🚀 Enviando plantilla:", templateName, "a", to);
     await axios.post(
       url,
       {
@@ -25,7 +31,7 @@ async function sendTemplate(templateName, phoneId, to, components = []) {
         template: {
           name: templateName,
           language: { code: 'es_MX' },
-          components,
+          components: [],
         },
       },
       {

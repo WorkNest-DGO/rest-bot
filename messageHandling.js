@@ -53,8 +53,12 @@ async function handleMessage(phoneId, from, msgBody) {
     await sendTemplate('menu_inicio', to);
   } else if (normalized === 'menu_hoy') {
     try {
-      const { data } = await axios.get('http://localhost:3001/api/menu');
-      const lista = data.menu.map(item => `\u2022 ${item.nombre} ($${item.precio})`).join('\n');
+      const { data } = await axios.get(
+        'https://grp-ia.com/bitacora-residentes/ofertas.php'
+      );
+      const platillos = data.menu
+        .map(item => `${item.nombre} $${item.precio}`)
+        .join(' | ');
 
       await sendTemplate('menu_hoy', to, [
         {
@@ -62,21 +66,28 @@ async function handleMessage(phoneId, from, msgBody) {
           parameters: [
             {
               type: 'text',
-              text: lista
-            }
-          ]
-        }
+              text: platillos,
+            },
+          ],
+        },
       ]);
     } catch (err) {
-      console.error('Error fetching menu:', err.message);
-      fs.appendFileSync('api_log.txt', `Error fetching menu: ${err.message}\n`);
-      await sendText(to, 'No hay datos de menú disponibles.');
+      console.error('❌ Error fetching menu:', err.message);
+      fs.appendFileSync(
+        'api_log.txt',
+        `❌ Error fetching menu: ${err.message}\n`
+      );
+      await sendText(to, 'No pudimos consultar el menú en este momento.');
     }
     return;
   } else if (normalized === 'ofertas_dia') {
     try {
-      const { data } = await axios.get('http://localhost:3001/api/ofertas');
-      const lista = data.ofertas.map(item => `\u2022 ${item.descripcion}`).join('\n');
+      const { data } = await axios.get(
+        'https://grp-ia.com/bitacora-residentes/ofertas.php'
+      );
+      const ofertas = data.ofertas
+        .map(item => `${item.descripcion}`)
+        .join(' | ');
 
       await sendTemplate('ofertas_dia', to, [
         {
@@ -84,14 +95,17 @@ async function handleMessage(phoneId, from, msgBody) {
           parameters: [
             {
               type: 'text',
-              text: lista
-            }
-          ]
-        }
+              text: ofertas,
+            },
+          ],
+        },
       ]);
     } catch (err) {
-      console.error('Error fetching ofertas:', err.message);
-      fs.appendFileSync('api_log.txt', `Error fetching ofertas: ${err.message}\n`);
+      console.error('❌ Error fetching ofertas:', err.message);
+      fs.appendFileSync(
+        'api_log.txt',
+        `❌ Error fetching ofertas: ${err.message}\n`
+      );
       await sendText(to, 'No hay ofertas disponibles.');
     }
     return;

@@ -5,27 +5,20 @@ const { sendTemplate } = require('./whatsappTemplates');
 
 const greetings = [
   'hola',
-  'buenos d\u00edas',
+  'buenos dias',
   'buenas tardes',
   'hey',
-  'qu\u00e9 tal',
+  'que tal',
   'saludos',
 ];
 
+const removeAccents = (text) =>
+  text.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 
-function menuHoy(phoneId, to, platillos) {
-  const bodyText = platillos.join('\n');
-  return sendTemplate('menu_hoy', phoneId, to, [
-    {
-      type: 'body',
-      parameters: [{ type: 'text', text: bodyText }],
-    },
-  ]);
-}
 
-function ofertasDia(phoneId, to, ofertas) {
+function ofertasDia(to, ofertas) {
   const bodyText = ofertas.join('\n');
-  return sendTemplate('ofertas_dia', phoneId, to, [
+  return sendTemplate('ofertas_dia', to, [
     {
       type: 'body',
       parameters: [{ type: 'text', text: bodyText }],
@@ -46,7 +39,7 @@ async function handleMessage(phoneId, from, msgBody) {
   console.log(logMsg);
   fs.appendFileSync('api_log.txt', logMsg + '\n');
 
-  const normalized = String(msgBody).trim().toLowerCase();
+  const normalized = removeAccents(String(msgBody).trim().toLowerCase());
 
   const isGreeting = greetings.includes(normalized);
   console.log('¿Se detectó saludo?', isGreeting);
@@ -57,42 +50,43 @@ async function handleMessage(phoneId, from, msgBody) {
     fs.appendFileSync('api_log.txt', 'Enviando plantilla de saludo\n');
     console.log("📤 Enviando plantilla 'menu_inicio'");
     fs.appendFileSync('api_log.txt', "📤 Enviando plantilla 'menu_inicio'\n");
-    await sendTemplate('menu_inicio', phoneId, to);
-  } else if (normalized === 'ver men\u00fa de hoy' || normalized === 'menu_hoy') {
-    try {
-      const { data } = await axios.get('https://grp-ia.com/bitacora-residentes/menu.php');
-      const platillos = Array.isArray(data) ? data : [];
-      await menuHoy(phoneId, to, platillos);
-    } catch (err) {
-      console.error('Error fetching menu:', err.message);
-      fs.appendFileSync('api_log.txt', `Error fetching menu: ${err.message}\n`);
-      console.log("📤 Enviando plantilla 'menu_inicio'");
-      fs.appendFileSync('api_log.txt', "📤 Enviando plantilla 'menu_inicio'\n");
-      await sendTemplate('menu_inicio', phoneId, to);
-    }
+    await sendTemplate('menu_inicio', to);
+  } else if (normalized === 'menu_hoy') {
+    const menuItems = '• Enchiladas\n• Tacos dorados\n• Agua de horchata';
+    await sendTemplate('menu_hoy', to, [
+      {
+        type: 'body',
+        parameters: [
+          {
+            type: 'text',
+            text: menuItems,
+          },
+        ],
+      },
+    ]);
   } else if (normalized === 'ver ofertas del d\u00eda' || normalized === 'ofertas_dia') {
     try {
       const { data } = await axios.get('https://grp-ia.com/bitacora-residentes/ofertas.php');
       const ofertas = Array.isArray(data) ? data : [];
-      await ofertasDia(phoneId, to, ofertas);
+      await ofertasDia(to, ofertas);
     } catch (err) {
       console.error('Error fetching ofertas:', err.message);
       fs.appendFileSync('api_log.txt', `Error fetching ofertas: ${err.message}\n`);
       console.log("📤 Enviando plantilla 'menu_inicio'");
       fs.appendFileSync('api_log.txt', "📤 Enviando plantilla 'menu_inicio'\n");
-      await sendTemplate('menu_inicio', phoneId, to);
+      await sendTemplate('menu_inicio', to);
     }
   } else if (normalized === 'salir') {
     // Could implement an exit option; for now, we just send menu again
     console.log("📤 Enviando plantilla 'menu_inicio'");
     fs.appendFileSync('api_log.txt', "📤 Enviando plantilla 'menu_inicio'\n");
-    await sendTemplate('menu_inicio', phoneId, to);
+    await sendTemplate('menu_inicio', to);
   } else {
     console.log('Enviando plantilla como fallback');
     fs.appendFileSync('api_log.txt', 'Enviando plantilla como fallback\n');
     console.log("📤 Enviando plantilla 'menu_inicio'");
     fs.appendFileSync('api_log.txt', "📤 Enviando plantilla 'menu_inicio'\n");
-    await sendTemplate('menu_inicio', phoneId, to);
+    await sendTemplate('menu_inicio', to);
   }
 }
 

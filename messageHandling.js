@@ -62,7 +62,7 @@ async function handleMessage(phoneId, from, msgBody) {
     await sendTemplate('menu_inicio', phoneId, to);
   } else if (normalized === 'ver men\u00fa de hoy') {
     try {
-      const { data } = await axios.get('http://127.0.0.1:80/rest/api/whats/menu.php');
+      const { data } = await axios.get('https://grp-ia.com/bitacora-residentes/menu.php');
       const platillos = Array.isArray(data) ? data : [];
       await menuHoy(phoneId, to, platillos);
     } catch (err) {
@@ -74,7 +74,7 @@ async function handleMessage(phoneId, from, msgBody) {
     }
   } else if (normalized === 'ver ofertas del d\u00eda') {
     try {
-      const { data } = await axios.get('http://127.0.0.1:80/rest/api/whats/ofertas.php');
+      const { data } = await axios.get('https://grp-ia.com/bitacora-residentes/ofertas.php');
       const ofertas = Array.isArray(data) ? data : [];
       await ofertasDia(phoneId, to, ofertas);
     } catch (err) {

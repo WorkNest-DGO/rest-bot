@@ -25,8 +25,9 @@ async function sendTemplate(templateName, phoneId, to) {
   const url = `https://graph.facebook.com/v23.0/${phoneId}/messages`;
 
   try {
-    console.log("🚀 Enviando plantilla:", templateName, "a", to);
-    fs.appendFileSync('logs.txt', `Enviando plantilla ${templateName} a ${to}\n`);
+    const logSend = `📤 Enviando plantilla "${templateName}" a ${to}`;
+    console.log(logSend);
+    fs.appendFileSync('logs.txt', logSend + '\n');
     await axios.post(
       url,
       {
@@ -48,9 +49,10 @@ async function sendTemplate(templateName, phoneId, to) {
     );
     console.log(`✅ Plantilla '${templateName}' enviada a ${to}`);
     fs.appendFileSync('logs.txt', `✅ Plantilla '${templateName}' enviada a ${to}\n`);
-  } catch (err) {
-    console.error('❌ Error enviando plantilla:', err.response?.data || err.message);
-    fs.appendFileSync('logs.txt', `Error enviando plantilla: ${err.response?.data || err.message}\n`);
+  } catch (error) {
+    console.error('❌ Error enviando plantilla:', error.response?.data || error.message);
+    const errLog = `❌ Error al enviar plantilla "${templateName}" a ${to}: ${error.message}`;
+    fs.appendFileSync('logs.txt', errLog + '\n');
   }
 }
 

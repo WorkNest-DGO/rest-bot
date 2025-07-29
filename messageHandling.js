@@ -42,11 +42,9 @@ async function handleMessage(phoneId, from, msgBody) {
 
   const to = from.startsWith("521") ? from.replace("521", "52") : from;
 
-  console.log('📥 Mensaje recibido:', msgBody);
-  fs.appendFileSync('logs.txt', `📥 Mensaje recibido: ${msgBody}\n`);
-
-  console.log('📞 Enviando a:', to);
-  fs.appendFileSync('logs.txt', `📞 Enviando a: ${to}\n`);
+  const logMsg = `📥 Mensaje recibido: "${msgBody}" de ${from} → enviado a ${to}`;
+  console.log(logMsg);
+  fs.appendFileSync('logs.txt', logMsg + '\n');
 
   const normalized = String(msgBody).trim().toLowerCase();
 

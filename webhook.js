@@ -28,7 +28,10 @@ router.post('/', async (req, res) => {
     const message = value?.messages?.[0];
     const phoneId = value?.metadata?.phone_number_id;
     const from = message?.from;
-    const msgBody = message?.text?.body;
+    let msgBody = message?.text?.body;
+    if (!msgBody && message?.interactive?.button_reply?.id) {
+      msgBody = message.interactive.button_reply.id;
+    }
 
     console.log('🆔 phoneId:', phoneId);
     console.log('📱 from:', from);

@@ -1,8 +1,9 @@
 const axios = require('axios');
 const fs = require('fs');
 
-async function sendTemplate(templateName, phoneId, to, components = []) {
+async function sendTemplate(templateName, to, components) {
   const token = process.env.WHATSAPP_TOKEN;
+  const phoneId = process.env.PHONE_NUMBER_ID;
 
   if (!token) {
     console.warn('⚠️  WHATSAPP_TOKEN no definido');
@@ -28,18 +29,23 @@ async function sendTemplate(templateName, phoneId, to, components = []) {
     const api_logend = `📤 Enviando plantilla "${templateName}" a ${to}`;
     console.log(api_logend);
     fs.appendFileSync('api_log.txt', api_logend + '\n');
+
+    const payload = {
+      messaging_product: 'whatsapp',
+      to,
+      type: 'template',
+      template: {
+        name: templateName,
+        language: { code: 'es_MX' },
+      },
+    };
+    if (Array.isArray(components) && components.length > 0) {
+      payload.template.components = components;
+    }
+
     await axios.post(
       url,
-      {
-        messaging_product: 'whatsapp',
-        to,
-        type: 'template',
-        template: {
-          name: templateName,
-          language: { code: 'es_MX' },
-          components,
-        },
-      },
+      payload,
       {
         headers: {
           Authorization: `Bearer ${token}`,

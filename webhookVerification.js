@@ -1,31 +1,42 @@
-require("dotenv").config();
-const fs = require('fs');
+const fs = require("fs");
 
-exports.verifyWebhook = (req, res) => {
-  const VERIFY_TOKEN = process.env.VERIFY_TOKEN || "Test1234";
+// Token de verificación (debe coincidir con el configurado en la plataforma de WhatsApp)
+const verifyToken = "test123";
 
+// Ruta para manejar la verificación (GET)
+module.exports = (req, res) => {
+  const hubVerifyToken = req.query["hub.verify_token"];
+  const hubChallenge = req.query["hub.challenge"];
+
+  // Log para depuración
+  fs.appendFileSync(
+    "debug_get_log.txt",
+    `${new Date().toISOString()} - GET Request: ${JSON.stringify(req.query)}\n`
+  );
+
+  if (hubVerifyToken === verifyToken) {
+    res.status(200).send(hubChallenge); // Responder con el desafío
+  } else {
+    fs.appendFileSync(
+      "debug_get_log.txt",
+      `${new Date().toISOString()} - Token Incorrecto: ${hubVerifyToken}\n`
+    );
+    res.status(403).send("Verificación fallida");
+  }
+};
+
+function verifyWebhook(req, res) {
+  const VERIFY_TOKEN = process.env.VERIFY_TOKEN || "test-token";
   const mode = req.query["hub.mode"];
   const token = req.query["hub.verify_token"];
   const challenge = req.query["hub.challenge"];
 
-  console.log("Verificación recibida:");
-  fs.appendFileSync('api_log.txt', 'Verificación recibida:\n');
-  console.log("mode:", mode, "token:", token, "challenge:", challenge);
-  fs.appendFileSync('api_log.txt', `mode: ${mode} token: ${token} challenge: ${challenge}\n`);
-
-  if (mode && token) {
-    if (mode === "subscribe" && token === VERIFY_TOKEN) {
-      console.log("Verificación exitosa");
-      fs.appendFileSync('api_log.txt', 'Verificación exitosa\n');
-      return res.status(200).send(challenge);
-    } else {
-      console.log("Token inválido:", token);
-      fs.appendFileSync('api_log.txt', `Token inválido: ${token}\n`);
-      return res.sendStatus(403);
-    }
+  if (mode && token && mode === "subscribe" && token === VERIFY_TOKEN) {
+    console.log("WEBHOOK_VERIFIED");
+    res.status(200).send(challenge);
   } else {
-    console.log("Faltan parámetros");
-    fs.appendFileSync('api_log.txt', 'Faltan parámetros\n');
-    return res.sendStatus(403);
+    res.sendStatus(403);
   }
-};
+}
+
+module.exports = { verifyWebhook };

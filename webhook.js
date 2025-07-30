@@ -1,48 +1,25 @@
-const express = require('express');
-const router = express.Router();
-const { handleMessage, handleIncomingMessage } = require('./messageHandling');
-const verifyToken = process.env.VERIFY_TOKEN;
+const express = require("express");
+const webhookVerification = require("./webhookVerification");
+const messageHandling = require("./messageHandling");
+const cors = require("cors");
+const path = require("path");
+const axios = require("axios");
+const fs = require("fs");
 
-// Ruta de verificación para Webhook
-router.get('/', (req, res) => {
-  const mode = req.query['hub.mode'];
-  const token = req.query['hub.verify_token'];
-  const challenge = req.query['hub.challenge'];
+const app = express();
+app.use(express.json());
 
-  if (mode && token === verifyToken) {
-    res.status(200).send(challenge);
-  } else {
-    res.sendStatus(403);
-  }
-});
+// Configuración de CORS
+app.use(
+  cors({
+    origin: "http://localhost:3001",
+    methods: "GET,POST,PUT,DELETE",
+    allowedHeaders: ["Content-Type", "Authorization"],
+  })
+);
 
-// Ruta POST para recibir mensajes de WhatsApp
-router.post('/', async (req, res) => {
-  try {
-    if (req.body.object === 'whatsapp') {
-      req.body.entry.forEach(async (entry) => {
-        const changes = entry.changes[0];
-        const value = changes.value;
-        const message = value.messages?.[0];
-        const phoneNumber = message?.from;
+// Ruta para manejo de verificaciones (GET)
+app.get("/webhook", webhookVerification);
 
-        if (message && phoneNumber) {
-          let msgBody = message.text?.body || '';
-          msgBody = msgBody?.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
-          console.log('📤 msgBody limpio:', msgBody);
-          await handleMessage(phoneNumber, msgBody);
-          await handleIncomingMessage(message, phoneNumber);
-        }
-      });
-
-      res.sendStatus(200);
-    } else {
-      res.sendStatus(404);
-    }
-  } catch (error) {
-    console.error('Error en webhook:', error.message);
-    res.sendStatus(500);
-  }
-});
-
-module.exports = router;
+// Ruta para manejo de notificaciones entrantes (POST)
+app.post("/webhook", messageHandling);

@@ -1,14 +1,23 @@
-const express = require('express');
+const express = require("express");
+const bodyParser = require("body-parser");
+const cors = require("cors");
+const fs = require("fs");
+const { verifyWebhook } = require("./webhookVerification");
+const webhookRoutes = require("./webhook");
+
 const app = express();
-const dotenv = require('dotenv');
-dotenv.config();
+const PORT =  3001;
 
-const webhookRouter = require('./webhook'); // conexión del webhook
+app.use(cors());
+app.use(bodyParser.json());
 
-app.use(express.json());
-app.use('/webhook', webhookRouter); // ruta base para webhook
+// Ruta de verificación (GET)
+app.get("/webhook", verifyWebhook);
 
-const PORT = process.env.PORT || 3001;
+// Ruta de recepción de mensajes (POST)
+app.use("/webhook", webhookRoutes);
+
 app.listen(PORT, () => {
-  console.log(`Servidor corriendo en puerto ${PORT}`);
+  console.log(`Webhook listening on port ${PORT}`);
+  fs.appendFileSync('api_log.txt', `Webhook listening on port ${PORT}\n`);
 });

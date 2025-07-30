@@ -3,8 +3,6 @@ const axios = require('axios');
 const {
   templates,
   enviarPlantillaWhatsApp,
-  enviarPlantillaOferta,
-  enviarPlantillaMenu,
   enviarPlantillaErrorGenerico,
   enviarMensajeTexto,
 } = require("./whatsappTemplates");
@@ -28,36 +26,6 @@ module.exports = async (req, res) => {
 
     console.log("Mensaje recibido:", text);
 
-    if (text.includes("ofertas")) {
-      const url = "https://grp-ia.com/bitacora-residentes/ofertas.php";
-      try {
-        const response = await axios.get(url);
-        const ofertas = response.data.ofertas || [];
-        if (ofertas.length === 0) {
-          fs.appendFileSync(
-            "api_log.txt",
-            `❌ Error fetching ofertas: Sin ofertas\n${JSON.stringify(response.data)}\n`
-          );
-          throw new Error("Sin ofertas");
-        }
-
-        fs.appendFileSync(
-          "api_log.txt",
-          `${url}\n${JSON.stringify(response.data)}\n`
-        );
-        await templates["ofertas_dia"](from, ofertas);
-        console.log("Enviada plantilla ofertas_dia");
-      } catch (err) {
-        console.error("❌ Error al obtener ofertas:", err.message);
-        const resp = err.response ? JSON.stringify(err.response.data) : "";
-        fs.appendFileSync(
-          "api_log.txt",
-          `❌ Error fetching ofertas: ${err.message}\n${resp}\n`
-        );
-        await enviarMensajeTexto(from, "No pudimos consultar las ofertas del día.");
-      }
-      return res.status(200).send("EVENT_RECEIVED");
-    }
 
     // Palabras clave
     const palabrasClaveSaludo = [
@@ -66,14 +34,13 @@ module.exports = async (req, res) => {
     ];
 
     let action = "";
-    let extractedValue = "";
 
     // Determinar acción
     if (palabrasClaveSaludo.some((saludo) => text.includes(saludo))) {
       action = "saludo";
-    } else if (text.includes("ver menu de hoy") ||text.includes("menu") || buttonReply === "btn_menu_hoy") {
+    } else if (text.trim() == "menu" || text.includes("ver menu de hoy") || buttonReply === "btn_menu_hoy") {
       action = "menu_hoy";
-    } else if (text.includes("ver ofertas del dia") || text.includes("ofertas") || buttonReply === "btn_ofertas_dia") {
+    } else if (text.trim() == "ofertas" || text.includes("ver ofertas del dia") || buttonReply === "btn_ofertas_dia") {
       action = "ofertas_dia";
     } else if (text.includes("salir") || buttonReply === "btn_salir") {
       action = "salir";
@@ -86,11 +53,11 @@ module.exports = async (req, res) => {
         break;
 
       case "menu_hoy":
-        await handleOrdenMenu(from, extractedValue);
+        await handleOrdenMenu(from);
         break;
 
       case "ofertas_dia":
-        await handleOrdenOferta(from, extractedValue);
+        await handleOrdenOferta(from);
         break;
 
       case "salir":
@@ -110,7 +77,7 @@ module.exports = async (req, res) => {
 
 
 // Función para manejar "menu dia"
-async function handleOrdenMenu(from, extractedValue) {
+async function handleOrdenMenu(from) {
   const url = 'https://grp-ia.com/bitacora-residentes/menu.php';
   try {
     const { data } = await axios.get(url);
@@ -124,8 +91,10 @@ async function handleOrdenMenu(from, extractedValue) {
     }
 
     fs.appendFileSync('api_log.txt', `${url}\n${JSON.stringify(data)}\n`);
-    const platillos = data.menu;
-    await templates["menu_hoy"](from, platillos);
+    const menuItems = data.menu
+      .map(p => `${p.nombre} - $${Number(p.precio).toFixed(2)}`)
+      .join(' | ');
+    await templates["menu_hoy"](from, menuItems);
   } catch (err) {
     console.error('❌ Error fetching menu:', err.message);
     const resp = err.response ? JSON.stringify(err.response.data) : '';
@@ -138,7 +107,7 @@ async function handleOrdenMenu(from, extractedValue) {
 }
 
 // Función para manejar "ofertas"
-async function handleOrdenOferta(from, extractedValue) {
+async function handleOrdenOferta(from) {
   const url = 'https://grp-ia.com/bitacora-residentes/ofertas.php';
   try {
     const { data } = await axios.get(url);
@@ -152,8 +121,8 @@ async function handleOrdenOferta(from, extractedValue) {
     }
 
     fs.appendFileSync('api_log.txt', `${url}\n${JSON.stringify(data)}\n`);
-    const ofertas = data.ofertas;
-    await templates["ofertas_dia"](from, ofertas);
+    const ofertasItems = data.ofertas.map(o => o.descripcion).join(' | ');
+    await templates["ofertas_dia"](from, ofertasItems);
   } catch (err) {
     console.error('❌ Error fetching ofertas:', err.message);
     const resp = err.response ? JSON.stringify(err.response.data) : '';

@@ -15,40 +15,22 @@ function sanitize(text) {
 }
 
 // Plantilla para el menú del día
-templates["menu_hoy"] = async (to, menu) => {
-  const listado = menu
-    .map((p) => `${p.nombre} - $${Number(p.precio).toFixed(2)}`)
-    .join(" | ");
-  const bodyText = sanitize(
-    `Nos complace presentar el menú del día: ${listado} - Tokyo Sushi Prime`
-  );
+templates["menu_hoy"] = async (to, menuText) => {
   const components = [
     {
-      type: "header",
-      parameters: [{ type: "text", text: sanitize("Menú del día") }],
-    },
-    {
       type: "body",
-      parameters: [{ type: "text", text: bodyText }],
+      parameters: [{ type: "text", text: sanitize(menuText) }],
     },
   ];
   await enviarPayload(to, templates.MENU_HOY, components);
 };
 
 // Plantilla para ofertas del día
-templates["ofertas_dia"] = async (to, ofertas) => {
-  const listado = ofertas.map((o) => o.descripcion).join(" | ");
-  const bodyText = sanitize(
-    `Nos complace mostrarte las ofertas del día: ${listado} - Tokyo Sushi Prime`
-  );
+templates["ofertas_dia"] = async (to, ofertasText) => {
   const components = [
     {
-      type: "header",
-      parameters: [{ type: "text", text: sanitize("Ofertas disponibles") }],
-    },
-    {
       type: "body",
-      parameters: [{ type: "text", text: bodyText }],
+      parameters: [{ type: "text", text: sanitize(ofertasText) }],
     },
   ];
   await enviarPayload(to, "ofertas_dia", components);
@@ -99,25 +81,6 @@ async function enviarPlantillaWhatsApp(to, templateName) {
   await enviarPayload(to, templateName);
 }
 
-async function enviarPlantillaMenu(to, menuText) {
-  const components = [
-    {
-      type: "body",
-      parameters: [{ type: "text", text: menuText }],
-    },
-  ];
-  await enviarPayload(to, templates.MENU_HOY, components);
-}
-
-async function enviarPlantillaOferta(to, ofertasText) {
-  const components = [
-    {
-      type: "body",
-      parameters: [{ type: "text", text: ofertasText }],
-    },
-  ];
-  await enviarPayload(to, templates.CALCULO, components);
-}
 
 async function enviarPlantillaErrorGenerico(to, errorMessage) {
   const components = [
@@ -168,8 +131,6 @@ function logError(payload, error) {
 module.exports = {
   templates,
   enviarPlantillaWhatsApp,
-  enviarPlantillaMenu,
-  enviarPlantillaOferta,
   enviarPlantillaErrorGenerico,
   enviarMensajeTexto,
 };

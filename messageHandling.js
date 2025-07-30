@@ -41,7 +41,7 @@ async function handleMessage(phoneId, from, msgBody) {
 
   const normalized = removeAccents(String(msgBody).trim().toLowerCase());
 
-  const isGreeting = greetings.includes(normalized);
+  const isGreeting = greetings.includes(normalized) || normalized === 'hola';
   console.log('¿Se detectó saludo?', isGreeting);
   fs.appendFileSync('api_log.txt', `¿Se detectó saludo? ${isGreeting}\n`);
 

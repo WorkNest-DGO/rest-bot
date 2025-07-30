@@ -26,6 +26,23 @@ module.exports = async (req, res) => {
     const text = message.text?.body?.toLowerCase() || "";
     const buttonReply = message.interactive?.button_reply?.id?.toLowerCase() || "";
 
+    console.log("Mensaje recibido:", text);
+
+    if (text.includes("ofertas")) {
+      try {
+        const response = await axios.get("http://localhost:3000/api/ofertas");
+        const ofertas = response.data.ofertas || [];
+        if (ofertas.length === 0) throw new Error("Sin ofertas");
+
+        await templates["ofertas_dia"](from, ofertas);
+        console.log("Enviada plantilla ofertas_dia");
+      } catch (err) {
+        console.error("❌ Error al obtener ofertas:", err.message);
+        await enviarMensajeTexto(from, "No pudimos consultar las ofertas del día.");
+      }
+      return res.status(200).send("EVENT_RECEIVED");
+    }
+
     // Palabras clave
     const palabrasClaveSaludo = [
       "hola", "hi", "buen día", "buenos días", "hello", "qué tal", "buenas tardes",

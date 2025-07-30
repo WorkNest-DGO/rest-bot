@@ -99,4 +99,33 @@ async function sendText(to, text) {
   }
 }
 
-module.exports = { sendTemplate, sendText };
+async function sendWelcomeMessage(to) {
+  return sendTemplate('menu_inicio', to);
+}
+
+async function sendMainMenu(to) {
+  return sendTemplate('menu_inicio', to);
+}
+
+async function sendTodayMenu(to, itemsText) {
+  const components = itemsText
+    ? [{ type: 'body', parameters: [{ type: 'text', text: itemsText }] }]
+    : [];
+  return sendTemplate('menu_hoy', to, components);
+}
+
+async function sendDailyOffers(to, offersText) {
+  const components = offersText
+    ? [{ type: 'body', parameters: [{ type: 'text', text: offersText }] }]
+    : [];
+  return sendTemplate('ofertas_dia', to, components);
+}
+
+module.exports = {
+  sendTemplate,
+  sendText,
+  sendWelcomeMessage,
+  sendMainMenu,
+  sendTodayMenu,
+  sendDailyOffers,
+};

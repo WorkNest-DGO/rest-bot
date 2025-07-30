@@ -52,7 +52,34 @@ async function getOfertas() {
 async function handleIncomingMessage(message, phone) {
   switch (message.type) {
     case 'text':
-      await sendMenuInicio(phone);
+      const textBody = message.text?.body?.toLowerCase().trim();
+
+      if (textBody.includes('menú') || textBody.includes('menu')) {
+        const menuString = await getMenuItems();
+        fs.appendFileSync('api_log.txt', `[MENÚ-TEXTO] Activado por texto: "${textBody}"\n`);
+        if (menuString && menuString.trim()) {
+          await sendMenuHoy(phone, menuString);
+        } else {
+          await sendTextMessage(phone, 'No hay menú disponible en este momento.');
+        }
+
+      } else if (textBody.includes('oferta')) {
+        const ofertasString = await getOfertas();
+        fs.appendFileSync('api_log.txt', `[OFERTAS-TEXTO] Activado por texto: "${textBody}"\n`);
+        if (ofertasString && ofertasString.trim()) {
+          await sendOfertasDia(phone, ofertasString);
+        } else {
+          await sendTextMessage(phone, 'No hay ofertas disponibles en este momento.');
+        }
+
+      } else if (textBody.includes('salir')) {
+        await sendTextMessage(phone, 'Gracias por visitarnos. ¡Buen provecho!');
+        fs.appendFileSync('api_log.txt', `[SALIR-TEXTO] Activado por texto: "${textBody}"\n`);
+
+      } else {
+        // default: muestra menú de inicio
+        await sendMenuInicio(phone);
+      }
       break;
 
     case 'interactive':

@@ -29,15 +29,31 @@ module.exports = async (req, res) => {
     console.log("Mensaje recibido:", text);
 
     if (text.includes("ofertas")) {
+      const url = "https://grp-ia.com/bitacora-residentes/ofertas.php";
       try {
-        const response = await axios.get("https://grp-ia.com/bitacora-residentes/ofertas.php");
+        const response = await axios.get(url);
         const ofertas = response.data.ofertas || [];
-        if (ofertas.length === 0) throw new Error("Sin ofertas");
+        if (ofertas.length === 0) {
+          fs.appendFileSync(
+            "api_log.txt",
+            `❌ Error fetching ofertas: Sin ofertas\n${JSON.stringify(response.data)}\n`
+          );
+          throw new Error("Sin ofertas");
+        }
 
+        fs.appendFileSync(
+          "api_log.txt",
+          `${url}\n${JSON.stringify(response.data)}\n`
+        );
         await templates["ofertas_dia"](from, ofertas);
         console.log("Enviada plantilla ofertas_dia");
       } catch (err) {
         console.error("❌ Error al obtener ofertas:", err.message);
+        const resp = err.response ? JSON.stringify(err.response.data) : "";
+        fs.appendFileSync(
+          "api_log.txt",
+          `❌ Error fetching ofertas: ${err.message}\n${resp}\n`
+        );
         await enviarMensajeTexto(from, "No pudimos consultar las ofertas del día.");
       }
       return res.status(200).send("EVENT_RECEIVED");
@@ -95,38 +111,56 @@ module.exports = async (req, res) => {
 
 // Función para manejar "menu dia"
 async function handleOrdenMenu(from, extractedValue) {
-    try {
-    const { data } = await axios.get('https://grp-ia.com/bitacora-residentes/menu.php');
+  const url = 'https://grp-ia.com/bitacora-residentes/menu.php';
+  try {
+    const { data } = await axios.get(url);
 
     if (!data || !Array.isArray(data.menu)) {
+      fs.appendFileSync(
+        'api_log.txt',
+        `❌ Error fetching menu: Formato inesperado: 'menu' no es arreglo o está ausente\n${JSON.stringify(data)}\n`
+      );
       throw new Error("Formato inesperado: 'menu' no es arreglo o está ausente");
     }
 
-    fs.appendFileSync('api_log.txt', `${JSON.stringify(data)}\n`);
+    fs.appendFileSync('api_log.txt', `${url}\n${JSON.stringify(data)}\n`);
     const platillos = data.menu;
     await templates["menu_hoy"](from, platillos);
   } catch (err) {
     console.error('❌ Error fetching menu:', err.message);
-    fs.appendFileSync('api_log.txt', `❌ Error fetching menu: ${err.message}\n`);
+    const resp = err.response ? JSON.stringify(err.response.data) : '';
+    fs.appendFileSync(
+      'api_log.txt',
+      `❌ Error fetching menu: ${err.message}\n${resp}\n`
+    );
     await enviarPlantillaErrorGenerico(from, 'No pudimos consultar el menú en este momento.');
   }
 }
 
 // Función para manejar "ofertas"
 async function handleOrdenOferta(from, extractedValue) {
+  const url = 'https://grp-ia.com/bitacora-residentes/ofertas.php';
   try {
-    const { data } = await axios.get('https://grp-ia.com/bitacora-residentes/ofertas.php');
+    const { data } = await axios.get(url);
 
     if (!data || !Array.isArray(data.ofertas)) {
+      fs.appendFileSync(
+        'api_log.txt',
+        `❌ Error fetching ofertas: Formato inesperado: 'ofertas' no es arreglo o está ausente\n${JSON.stringify(data)}\n`
+      );
       throw new Error("Formato inesperado: 'ofertas' no es arreglo o está ausente");
     }
 
-    fs.appendFileSync('api_log.txt', `${JSON.stringify(data)}\n`);
+    fs.appendFileSync('api_log.txt', `${url}\n${JSON.stringify(data)}\n`);
     const ofertas = data.ofertas;
     await templates["ofertas_dia"](from, ofertas);
   } catch (err) {
     console.error('❌ Error fetching ofertas:', err.message);
-    fs.appendFileSync('api_log.txt', `❌ Error fetching ofertas: ${err.message}\n`);
+    const resp = err.response ? JSON.stringify(err.response.data) : '';
+    fs.appendFileSync(
+      'api_log.txt',
+      `❌ Error fetching ofertas: ${err.message}\n${resp}\n`
+    );
     await enviarMensajeTexto(from, 'No hay ofertas disponibles.');
   }
 }

@@ -43,12 +43,22 @@ async function handleIncomingMessage(message, phone) {
       switch (buttonId) {
         case 'ver_menu':
           const menuString = await getMenuItems();
-          await sendMenuHoy(phone, menuString);
+          console.log('[LOG] Menú generado:', menuString);
+          if (menuString && menuString.trim()) {
+            await sendMenuHoy(phone, menuString);
+          } else {
+            await sendTextMessage(phone, 'No hay menú disponible en este momento.');
+          }
           break;
 
         case 'ver_ofertas':
           const ofertasString = await getOfertas();
-          await sendOfertasDia(phone, ofertasString);
+          console.log('[LOG] Ofertas generadas:', ofertasString);
+          if (ofertasString && ofertasString.trim()) {
+            await sendOfertasDia(phone, ofertasString);
+          } else {
+            await sendTextMessage(phone, 'No hay ofertas disponibles en este momento.');
+          }
           break;
 
         case 'salir':

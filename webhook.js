@@ -28,11 +28,12 @@ router.post('/', async (req, res) => {
     const message = value?.messages?.[0];
     const phoneId = value?.metadata?.phone_number_id;
     const from = message?.from;
-    let msgBody = message?.text?.body;
-    if (!msgBody && message?.interactive?.button_reply?.id) {
-      msgBody = message.interactive.button_reply.id;
-    }
-    msgBody = msgBody?.toLowerCase();
+    let msgBody = message?.text?.body || message?.interactive?.button_reply?.id;
+    msgBody = msgBody
+      ?.toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .trim();
 
     const msgType = message?.type;
     console.log(`\ud83d\udce4 Tipo de mensaje recibido: ${msgType}`);

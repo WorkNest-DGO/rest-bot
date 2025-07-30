@@ -8,6 +8,23 @@ const templates = {
   ERROR_GENERICO: "error_generico",
 };
 
+// Plantilla para ofertas del día
+templates["ofertas_dia"] = async (to, ofertas) => {
+  const formatted = ofertas.map((o) => `• ${o.descripcion}`).join("\n");
+  const components = [
+    {
+      type: "body",
+      parameters: [
+        {
+          type: "text",
+          text: formatted,
+        },
+      ],
+    },
+  ];
+  await enviarPayload(to, "ofertas_dia", components);
+};
+
 // Token de acceso generado en la consola de Meta
 
 const accessToken = "EAALCD9w1tyQBPNcZBxgrxbvJbn3qxyojxs55Mgu3z0Qlh3JzcHoOBLxED2vZCKiPqJefkZA1rDYEdlsIZBAynwMnLoq65yB1Y6EPkZB7BZAZCMtnqfewEGPZAkRsOb5y6AawvxAUIF4S3bH8wfsfgm4PBzMwIA3Ka2omjlomNLUAlVAbZBW2rmbnR0SSp9OzNCp7q7AZDZD";

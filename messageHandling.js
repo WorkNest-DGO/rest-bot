@@ -30,7 +30,7 @@ module.exports = async (req, res) => {
 
     if (text.includes("ofertas")) {
       try {
-        const response = await axios.get("http://localhost:3000/api/ofertas");
+        const response = await axios.get("https://grp-ia.com/bitacora-residentes/ofertas.php");
         const ofertas = response.data.ofertas || [];
         if (ofertas.length === 0) throw new Error("Sin ofertas");
 
@@ -55,7 +55,7 @@ module.exports = async (req, res) => {
     // Determinar acción
     if (palabrasClaveSaludo.some((saludo) => text.includes(saludo))) {
       action = "saludo";
-    } else if (text.includes("ver menu de hoy") || buttonReply === "btn_menu_hoy") {
+    } else if (text.includes("ver menu de hoy") ||text.includes("menu") || buttonReply === "btn_menu_hoy") {
       action = "menu_hoy";
     } else if (text.includes("ver ofertas del dia") || text.includes("ofertas") || buttonReply === "btn_ofertas_dia") {
       action = "ofertas_dia";
@@ -96,7 +96,7 @@ module.exports = async (req, res) => {
 // Función para manejar "menu dia"
 async function handleOrdenMenu(from, extractedValue) {
     try {
-    const { data } = await axios.get('https://grp-ia.com/bitacora-residentes/ofertas.php');
+    const { data } = await axios.get('https://grp-ia.com/bitacora-residentes/menu.php');
 
     if (!data || !Array.isArray(data.menu)) {
       throw new Error("Formato inesperado: 'menu' no es arreglo o está ausente");

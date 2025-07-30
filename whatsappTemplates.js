@@ -1,6 +1,13 @@
 const axios = require("axios");
 const fs = require("fs");
 
+const templates = {
+  MENU_INICIO: "menu_inicio",
+  MENU_HOY: "menu_hoy",
+  CALCULO: "calculo",
+  ERROR_GENERICO: "error_generico",
+};
+
 // Token de acceso generado en la consola de Meta
 
 const accessToken = "EAALCD9w1tyQBPNcZBxgrxbvJbn3qxyojxs55Mgu3z0Qlh3JzcHoOBLxED2vZCKiPqJefkZA1rDYEdlsIZBAynwMnLoq65yB1Y6EPkZB7BZAZCMtnqfewEGPZAkRsOb5y6AawvxAUIF4S3bH8wfsfgm4PBzMwIA3Ka2omjlomNLUAlVAbZBW2rmbnR0SSp9OzNCp7q7AZDZD";
@@ -46,39 +53,24 @@ async function enviarPlantillaWhatsApp(to, templateName) {
   await enviarPayload(to, templateName);
 }
 
-async function enviarPlantillaWhatsApp2(to, templateName, templateParameters = []) {
-  const components = templateParameters.length
-    ? [
-        {
-          type: "body",
-          parameters: templateParameters.map((text) => ({ type: "text", text })),
-        },
-      ]
-    : [];
-  await enviarPayload(to, templateName, components);
-}
-
-async function enviarPlantillaOrdenPago(to, orden, reference) {
+async function enviarPlantillaMenu(to, menuText) {
   const components = [
     {
       type: "body",
-      parameters: [
-        { type: "text", text: `${orden}` },
-        { type: "text", text: reference },
-      ],
+      parameters: [{ type: "text", text: menuText }],
     },
   ];
-  await enviarPayload(to, "order", components);
+  await enviarPayload(to, templates.MENU_HOY, components);
 }
 
-async function enviarPlantillaConsultaPredial(to, parameters) {
+async function enviarPlantillaOferta(to, ofertasText) {
   const components = [
     {
       type: "body",
-      parameters: parameters.map((text) => ({ type: "text", text })),
+      parameters: [{ type: "text", text: ofertasText }],
     },
   ];
-  await enviarPayload(to, "datos_consulta_predial", components);
+  await enviarPayload(to, templates.CALCULO, components);
 }
 
 async function enviarPlantillaErrorGenerico(to, errorMessage) {
@@ -88,38 +80,29 @@ async function enviarPlantillaErrorGenerico(to, errorMessage) {
       parameters: [{ type: "text", text: errorMessage }],
     },
   ];
-  await enviarPayload(to, "error_generico", components);
+  await enviarPayload(to, templates.ERROR_GENERICO, components);
 }
 
-async function enviarPlantillaImagenTlaquepaque(to) {
-  const components = [
-    {
-      type: "header",
-      parameters: [
-        {
-          type: "image",
-          image: {
-            link: "https://grp-ia.com/report-whats-app/pdf/tlaquepaque.jpg",
-          },
-        },
-      ],
-    },
-  ];
-  await enviarPayload(to, "calculo", components);
-}
+async function enviarMensajeTexto(to, text) {
+  const url = `https://graph.facebook.com/v23.0/${phoneNumberId}/messages`;
+  const payload = {
+    messaging_product: "whatsapp",
+    to: procesarNumero(to),
+    type: "text",
+    text: { body: text },
+  };
 
-async function enviarPlantillaPago(to, orden, amount, reference) {
-  const components = [
-    {
-      type: "body",
-      parameters: [
-        { type: "text", text: `${orden}` },
-        { type: "text", text: `$${amount}` },
-        { type: "text", text: reference },
-      ],
-    },
-  ];
-  await enviarPayload(to, "pagof", components);
+  const headers = {
+    Authorization: `Bearer ${accessToken}`,
+    "Content-Type": "application/json",
+  };
+
+  try {
+    const response = await axios.post(url, payload, { headers });
+    logExitoso(payload, response.data);
+  } catch (error) {
+    logError(payload, error);
+  }
 }
 
 // Funciones auxiliares para logging
@@ -137,11 +120,10 @@ function logError(payload, error) {
 }
 
 module.exports = {
+  templates,
   enviarPlantillaWhatsApp,
-  enviarPlantillaWhatsApp2,
-  enviarPlantillaOrdenPago,
-  enviarPlantillaConsultaPredial,
+  enviarPlantillaMenu,
+  enviarPlantillaOferta,
   enviarPlantillaErrorGenerico,
-  enviarPlantillaImagenTlaquepaque,
-  enviarPlantillaPago,
+  enviarMensajeTexto,
 };

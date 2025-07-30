@@ -1,18 +1,13 @@
 const fs = require('fs');
-const axios = require('axios')
-const path = require("path");
+const axios = require('axios');
 const {
+  templates,
   enviarPlantillaWhatsApp,
-  enviarPlantillaWhatsApp2,
   enviarPlantillaOferta,
   enviarPlantillaMenu,
-  enviarPlantillaErrorGenerico
+  enviarPlantillaErrorGenerico,
+  enviarMensajeTexto,
 } = require("./whatsappTemplates");
-
-const negocio = "Tokyo Sushi Prime";
-const apiUrlOferta = "https://grp-ia.com/bitacora-residentes/ofertas.php";
-const apiUrlMenu = "https://grp-ia.com/bitacora-residentes/ofertas.php";
-const authToken =   "Bearer EAALCD9w1tyQBPNcZBxgrxbvJbn3qxyojxs55Mgu3z0Qlh3JzcHoOBLxED2vZCKiPqJefkZA1rDYEdlsIZBAynwMnLoq65yB1Y6EPkZB7BZAZCMtnqfewEGPZAkRsOb5y6AawvxAUIF4S3bH8wfsfgm4PBzMwIA3Ka2omjlomNLUAlVAbZBW2rmbnR0SSp9OzNCp7q7AZDZD";
 
 module.exports = async (req, res) => {
   const data = req.body;
@@ -43,13 +38,13 @@ module.exports = async (req, res) => {
     // Determinar acción
     if (palabrasClaveSaludo.some((saludo) => text.includes(saludo))) {
       action = "saludo";
-    } else if (text.includes("Ver menu de hoy") || buttonReply === "btn_menu_hoy") {
+    } else if (text.includes("ver menu de hoy") || buttonReply === "btn_menu_hoy") {
       action = "menu_hoy";
-    } else if (text.includes("Ver ofertas del dia") || buttonReply === "btn_ofertas_dia") {
+    } else if (text.includes("ver ofertas del dia") || text.includes("ofertas") || buttonReply === "btn_ofertas_dia") {
       action = "ofertas_dia";
     } else if (text.includes("salir") || buttonReply === "btn_salir") {
       action = "salir";
-    } 
+    }
 
     // Procesar acción
     switch (action) {
@@ -66,7 +61,7 @@ module.exports = async (req, res) => {
         break;
 
       case "salir":
-        await enviarPlantillaWhatsApp2(from, "salir");
+        await enviarMensajeTexto(from, "Gracias por tu visita. ¡Hasta pronto!");
         break;
 
       default:
@@ -90,12 +85,13 @@ async function handleOrdenMenu(from, extractedValue) {
       throw new Error("Formato inesperado: 'menu' no es arreglo o está ausente");
     }
 
+    fs.appendFileSync('api_log.txt', `${JSON.stringify(data)}\n`);
     const platillos = data.menu.map(item => `${item.nombre} $${item.precio}`).join(' | ');
-    await enviarPlantillaMenu(from, menu);
+    await enviarPlantillaMenu(from, platillos);
   } catch (err) {
     console.error('❌ Error fetching menu:', err.message);
     fs.appendFileSync('api_log.txt', `❌ Error fetching menu: ${err.message}\n`);
-    await enviarPlantillaErrorGenerico(to, 'No pudimos consultar el menú en este momento.');
+    await enviarPlantillaErrorGenerico(from, 'No pudimos consultar el menú en este momento.');
   }
 }
 
@@ -108,134 +104,12 @@ async function handleOrdenOferta(from, extractedValue) {
       throw new Error("Formato inesperado: 'ofertas' no es arreglo o está ausente");
     }
 
+    fs.appendFileSync('api_log.txt', `${JSON.stringify(data)}\n`);
     const ofertas = data.ofertas.map(item => `${item.descripcion}`).join(' | ');
     await enviarPlantillaOferta(from, ofertas);
   } catch (err) {
     console.error('❌ Error fetching ofertas:', err.message);
     fs.appendFileSync('api_log.txt', `❌ Error fetching ofertas: ${err.message}\n`);
-    await sendText(to, 'No hay ofertas disponibles.');
+    await enviarMensajeTexto(from, 'No hay ofertas disponibles.');
   }
-}
-
-async function handleIncomingMessage(phoneId, from, message) {
-  let texto = "";
-
-  if (message.type === "text") {
-    texto = message.text.body.toLowerCase();
-  } else if (message.type === "interactive" && message.interactive.type === "button_reply") {
-    texto = message.interactive.button_reply.title.toLowerCase();
-  } else {
-    console.log("Tipo de mensaje no manejado:", message);
-    return;
-  }
-
-  if (texto.includes("menú") || texto.includes("menu")) {
-    sendMenu(phoneId, from);
-    return;
-  } else if (texto.includes("oferta")) {
-    ofertas(phoneId, from);
-    return;
-  } else if (texto.includes("salir")) {
-    sendTextMessage(phoneId, from, "Gracias por tu visita. ¡Hasta pronto!");
-    return;
-  } else {
-    sendMenuInicio(phoneId, from);
-    return;
-  }
-
-  if (!phoneId || !from || !message) {
-    console.warn('phoneId, from o message no definidos');
-    fs.appendFileSync('api_log.txt', 'phoneId, from o message no definidos\n');
-    return;
-  }
-
-
-}
-function ofertas(phoneId, from) {
-  const payload = {
-    messaging_product: "whatsapp",
-    to: from,
-    type: "template",
-    template: {
-      name: "ofertas_dia",
-      language: { code: "es_MX" }
-    }
-  };
-
-  axios.post(`https://graph.facebook.com/v18.0/${phoneId}/messages`, payload, {
-    headers: {
-      Authorization: `Bearer ${WHATSAPP_TOKEN}`,
-      'Content-Type': 'application/json'
-    }
-  }).then(response => {
-    console.log("Plantilla 'ofertas_dia' enviada:", response.data);
-  }).catch(error => {
-    console.error("Error al enviar plantilla 'ofertas_dia':", error.response?.data || error.message);
-  });
-}
-
-function sendMenu(phoneId, from) {
-  const payload = {
-    messaging_product: "whatsapp",
-    to: from,
-    type: "template",
-    template: {
-      name: "menu_hoy",
-      language: { code: "es_MX" }
-    }
-  };
-
-  axios.post(`https://graph.facebook.com/v18.0/${phoneId}/messages`, payload, {
-    headers: {
-      Authorization: `Bearer ${WHATSAPP_TOKEN}`,
-      'Content-Type': 'application/json'
-    }
-  }).then(response => {
-    console.log("Plantilla 'menu_hoy' enviada:", response.data);
-  }).catch(error => {
-    console.error("Error al enviar plantilla 'menu_hoy':", error.response?.data || error.message);
-  });
-}
-
-function sendMenuInicio(phoneId, from) {
-  const payload = {
-    messaging_product: "whatsapp",
-    to: from,
-    type: "template",
-    template: {
-      name: "menu_inicio",
-      language: { code: "es_MX" }
-    }
-  };
-
-  axios.post(`https://graph.facebook.com/v18.0/${phoneId}/messages`, payload, {
-    headers: {
-      Authorization: `Bearer ${WHATSAPP_TOKEN}`,
-      'Content-Type': 'application/json'
-    }
-  }).then(response => {
-    console.log("Plantilla 'menu_inicio' enviada:", response.data);
-  }).catch(error => {
-    console.error("Error al enviar plantilla 'menu_inicio':", error.response?.data || error.message);
-  });
-}
-
-function sendTextMessage(phoneId, from, text) {
-  const payload = {
-    messaging_product: "whatsapp",
-    to: from,
-    text: { body: text },
-    type: "text"
-  };
-
-  axios.post(`https://graph.facebook.com/v18.0/${phoneId}/messages`, payload, {
-    headers: {
-      Authorization: `Bearer ${WHATSAPP_TOKEN}`,
-      'Content-Type': 'application/json'
-    }
-  }).then(response => {
-    console.log("Mensaje de texto enviado:", response.data);
-  }).catch(error => {
-    console.error("Error al enviar mensaje de texto:", error.response?.data || error.message);
-  });
 }

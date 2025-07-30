@@ -103,8 +103,8 @@ async function handleOrdenMenu(from, extractedValue) {
     }
 
     fs.appendFileSync('api_log.txt', `${JSON.stringify(data)}\n`);
-    const platillos = data.menu.map(item => `${item.nombre} $${item.precio}`).join(' | ');
-    await enviarPlantillaMenu(from, platillos);
+    const platillos = data.menu;
+    await templates["menu_hoy"](from, platillos);
   } catch (err) {
     console.error('❌ Error fetching menu:', err.message);
     fs.appendFileSync('api_log.txt', `❌ Error fetching menu: ${err.message}\n`);
@@ -122,8 +122,8 @@ async function handleOrdenOferta(from, extractedValue) {
     }
 
     fs.appendFileSync('api_log.txt', `${JSON.stringify(data)}\n`);
-    const ofertas = data.ofertas.map(item => `${item.descripcion}`).join(' | ');
-    await enviarPlantillaOferta(from, ofertas);
+    const ofertas = data.ofertas;
+    await templates["ofertas_dia"](from, ofertas);
   } catch (err) {
     console.error('❌ Error fetching ofertas:', err.message);
     fs.appendFileSync('api_log.txt', `❌ Error fetching ofertas: ${err.message}\n`);

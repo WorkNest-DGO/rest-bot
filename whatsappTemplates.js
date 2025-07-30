@@ -8,18 +8,47 @@ const templates = {
   ERROR_GENERICO: "error_generico",
 };
 
-// Plantilla para ofertas del día
-templates["ofertas_dia"] = async (to, ofertas) => {
-  const formatted = ofertas.map((o) => `• ${o.descripcion}`).join("\n");
+// Utilidad para limpiar texto y asegurar longitud
+function sanitize(text) {
+  const cleaned = text.replace(/[\n\t]+/g, " ").replace(/\s{2,}/g, " ").trim();
+  return cleaned.slice(0, 1024);
+}
+
+// Plantilla para el menú del día
+templates["menu_hoy"] = async (to, menu) => {
+  const listado = menu
+    .map((p) => `${p.nombre} - $${Number(p.precio).toFixed(2)}`)
+    .join(" | ");
+  const bodyText = sanitize(
+    `Nos complace presentar el menú del día: ${listado} - Tokyo Sushi Prime`
+  );
   const components = [
     {
+      type: "header",
+      parameters: [{ type: "text", text: sanitize("Menú del día") }],
+    },
+    {
       type: "body",
-      parameters: [
-        {
-          type: "text",
-          text: formatted,
-        },
-      ],
+      parameters: [{ type: "text", text: bodyText }],
+    },
+  ];
+  await enviarPayload(to, templates.MENU_HOY, components);
+};
+
+// Plantilla para ofertas del día
+templates["ofertas_dia"] = async (to, ofertas) => {
+  const listado = ofertas.map((o) => o.descripcion).join(" | ");
+  const bodyText = sanitize(
+    `Nos complace mostrarte las ofertas del día: ${listado} - Tokyo Sushi Prime`
+  );
+  const components = [
+    {
+      type: "header",
+      parameters: [{ type: "text", text: sanitize("Ofertas disponibles") }],
+    },
+    {
+      type: "body",
+      parameters: [{ type: "text", text: bodyText }],
     },
   ];
   await enviarPayload(to, "ofertas_dia", components);

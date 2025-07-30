@@ -1,7 +1,7 @@
 const express = require('express');
 const fs = require('fs');
 const router = express.Router();
-const handleMessage = require('./messageHandling');
+const handleIncomingMessage = require('./messageHandling');
 
 // Meta validation endpoint
 router.get('/', (req, res) => {
@@ -28,29 +28,25 @@ router.post('/', async (req, res) => {
     const message = value?.messages?.[0];
     const phoneId = value?.metadata?.phone_number_id;
     const from = message?.from;
-    let msgBody = message?.text?.body || message?.interactive?.button_reply?.id;
-    msgBody = msgBody
-      ?.toLowerCase()
-      .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '')
-      .trim();
 
-    const msgType = message?.type;
-    console.log(`\ud83d\udce4 Tipo de mensaje recibido: ${msgType}`);
-    fs.appendFileSync('api_log.txt', `Tipo de mensaje recibido: ${msgType}\n`);
+    const structured = {
+      type: message?.type,
+      text: message?.text,
+      interactive: message?.interactive,
+    };
 
     console.log('🆔 phoneId:', phoneId);
     console.log('📱 from:', from);
-    console.log('💬 msgBody:', msgBody);
+    console.log('📨 tipo:', structured.type);
     fs.appendFileSync('api_log.txt', `🆔 phoneId: ${phoneId}\n`);
     fs.appendFileSync('api_log.txt', `📱 from: ${from}\n`);
-    fs.appendFileSync('api_log.txt', `💬 msgBody: ${msgBody}\n`);
+    fs.appendFileSync('api_log.txt', `📨 tipo: ${structured.type}\n`);
 
-    if (!phoneId || !from || !msgBody) {
+    if (!phoneId || !from || !structured.type) {
       console.log('⚠️ Faltan datos esenciales en el mensaje');
       fs.appendFileSync('api_log.txt', '⚠️ Faltan datos esenciales en el mensaje\n');
     } else {
-      await handleMessage(phoneId, from, msgBody);
+      await handleIncomingMessage(phoneId, from, structured);
     }
   } catch (err) {
     console.error('❌ Error al procesar webhook:', err);

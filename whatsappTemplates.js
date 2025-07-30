@@ -46,16 +46,20 @@ async function sendTemplateMessage(to, templateName, variableText = []) {
 
 // Plantillas específicas
 
+function sendTemplate(to, templateName, variables = []) {
+  return sendTemplateMessage(to, templateName, variables);
+}
+
 function sendMenuInicio(to) {
-  return sendTemplateMessage(to, 'menu_inicio');
+  return sendTemplate(to, 'menu_inicio');
 }
 
 function sendMenuHoy(to, menuText) {
-  return sendTemplateMessage(to, 'menu_hoy', [menuText]);
+  return sendTemplate(to, 'menu_hoy', [menuText]);
 }
 
 function sendOfertasDia(to, ofertasText) {
-  return sendTemplateMessage(to, 'ofertas_dia', [ofertasText]);
+  return sendTemplate(to, 'ofertas_dia', [ofertasText]);
 }
 
 function sendTextMessage(to, bodyText) {
@@ -73,6 +77,7 @@ function sendTextMessage(to, bodyText) {
 }
 
 module.exports = {
+  sendTemplate,
   sendMenuInicio,
   sendMenuHoy,
   sendOfertasDia,

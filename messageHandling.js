@@ -1,4 +1,5 @@
 const {
+  sendTemplate,
   sendMenuInicio,
   sendMenuHoy,
   sendOfertasDia,
@@ -49,37 +50,49 @@ async function getOfertas() {
   }
 }
 
+async function handleMessage(from, msgBody) {
+  if (msgBody === 'hola' || msgBody === 'menu_inicio') {
+    await sendTemplate(from, 'menu_inicio');
+    return;
+  }
+
+  if (msgBody.includes('menú') || msgBody.includes('menu')) {
+    const menuString = await getMenuItems();
+    fs.appendFileSync('api_log.txt', `[MENÚ-TEXTO] Activado por texto: "${msgBody}"\n`);
+    if (menuString && menuString.trim()) {
+      await sendMenuHoy(from, menuString);
+    } else {
+      await sendTextMessage(from, 'No hay menú disponible en este momento.');
+    }
+    return;
+  }
+
+  if (msgBody.includes('oferta')) {
+    const ofertasString = await getOfertas();
+    fs.appendFileSync('api_log.txt', `[OFERTAS-TEXTO] Activado por texto: "${msgBody}"\n`);
+    if (ofertasString && ofertasString.trim()) {
+      await sendOfertasDia(from, ofertasString);
+    } else {
+      await sendTextMessage(from, 'No hay ofertas disponibles en este momento.');
+    }
+    return;
+  }
+
+  if (msgBody.includes('salir')) {
+    await sendTextMessage(from, 'Gracias por visitarnos. ¡Buen provecho!');
+    fs.appendFileSync('api_log.txt', `[SALIR-TEXTO] Activado por texto: "${msgBody}"\n`);
+    return;
+  }
+
+  await sendMenuInicio(from);
+}
+
 async function handleIncomingMessage(message, phone) {
   switch (message.type) {
     case 'text':
-      const textBody = message.text?.body?.toLowerCase().trim();
-
-      if (textBody.includes('menú') || textBody.includes('menu')) {
-        const menuString = await getMenuItems();
-        fs.appendFileSync('api_log.txt', `[MENÚ-TEXTO] Activado por texto: "${textBody}"\n`);
-        if (menuString && menuString.trim()) {
-          await sendMenuHoy(phone, menuString);
-        } else {
-          await sendTextMessage(phone, 'No hay menú disponible en este momento.');
-        }
-
-      } else if (textBody.includes('oferta')) {
-        const ofertasString = await getOfertas();
-        fs.appendFileSync('api_log.txt', `[OFERTAS-TEXTO] Activado por texto: "${textBody}"\n`);
-        if (ofertasString && ofertasString.trim()) {
-          await sendOfertasDia(phone, ofertasString);
-        } else {
-          await sendTextMessage(phone, 'No hay ofertas disponibles en este momento.');
-        }
-
-      } else if (textBody.includes('salir')) {
-        await sendTextMessage(phone, 'Gracias por visitarnos. ¡Buen provecho!');
-        fs.appendFileSync('api_log.txt', `[SALIR-TEXTO] Activado por texto: "${textBody}"\n`);
-
-      } else {
-        // default: muestra menú de inicio
-        await sendMenuInicio(phone);
-      }
+      const textBody = message.text?.body || '';
+      const cleanText = textBody.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+      await handleMessage(phone, cleanText);
       break;
 
     case 'interactive':
@@ -121,4 +134,7 @@ async function handleIncomingMessage(message, phone) {
   }
 }
 
-module.exports = handleIncomingMessage;
+module.exports = {
+  handleIncomingMessage,
+  handleMessage,
+};

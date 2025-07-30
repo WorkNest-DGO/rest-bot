@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const handleIncomingMessage = require('./messageHandling');
+const { handleMessage, handleIncomingMessage } = require('./messageHandling');
 const verifyToken = process.env.VERIFY_TOKEN;
 
 // Ruta de verificación para Webhook
@@ -27,6 +27,10 @@ router.post('/', async (req, res) => {
         const phoneNumber = message?.from;
 
         if (message && phoneNumber) {
+          let msgBody = message.text?.body || '';
+          msgBody = msgBody?.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+          console.log('📤 msgBody limpio:', msgBody);
+          await handleMessage(phoneNumber, msgBody);
           await handleIncomingMessage(message, phoneNumber);
         }
       });

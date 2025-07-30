@@ -16,11 +16,21 @@ async function sendTemplateMessage(to, templateName, variableText = []) {
     },
   };
 
-  if (variableText.length > 0) {
+  // Validación y depuración
+  console.log(`[LOG] Enviando plantilla '${templateName}' con variables:`, variableText);
+
+  if (
+    Array.isArray(variableText) &&
+    variableText.length > 0 &&
+    variableText.every(text => typeof text === 'string' && text.trim() !== '')
+  ) {
     payload.template.components = [
       {
         type: 'body',
-        parameters: variableText.map(text => ({ type: 'text', text })),
+        parameters: variableText.map(text => ({
+          type: 'text',
+          text: text.trim(),
+        })),
       },
     ];
   }
@@ -30,7 +40,7 @@ async function sendTemplateMessage(to, templateName, variableText = []) {
       headers: { Authorization: `Bearer ${token}` },
     });
   } catch (error) {
-    console.error(`Error enviando template '${templateName}':`, error.response?.data || error.message);
+    console.error(`❌ Error enviando template '${templateName}':`, error.response?.data || error.message);
   }
 }
 

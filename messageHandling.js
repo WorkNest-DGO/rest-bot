@@ -5,6 +5,7 @@ const {
   sendTextMessage,
 } = require('./whatsappTemplates');
 const axios = require('axios');
+const fs = require('fs');
 
 // URLS de las APIs (puedes ajustar a tus rutas reales)
 const MENU_API = 'https://grp-ia.com/bitacora-residentes/menu.php';
@@ -12,21 +13,39 @@ const OFERTAS_API = 'https://grp-ia.com/bitacora-residentes/ofertas.php';
 
 async function getMenuItems() {
   try {
-    const response = await axios.get(MENU_API);
-    return response.data.menu.map(item => `${item.nombre} - $${item.precio}`).join('\n');
-  } catch (error) {
-    console.error('Error al obtener menú:', error.message);
-    return 'No pudimos cargar el menú en este momento.';
+    const { data } = await axios.get('https://grp-ia.com/bitacora-residentes/menu.php');
+    fs.appendFileSync('api_log.txt', `[MENÚ] API Response: ${JSON.stringify(data)}\n`);
+
+    if (!data || !Array.isArray(data.menu) || data.menu.length === 0) {
+      fs.appendFileSync('api_log.txt', '[MENÚ] No hay datos válidos de menú.\n');
+      return '';
+    }
+
+    const textoMenu = data.menu.map(item => `${item.nombre} - $${item.precio}`).join(' | ');
+    fs.appendFileSync('api_log.txt', `[MENÚ] Texto generado: ${textoMenu}\n`);
+    return textoMenu;
+  } catch (err) {
+    fs.appendFileSync('api_log.txt', `❌ Error al obtener menú: ${err.message}\n`);
+    return '';
   }
 }
 
 async function getOfertas() {
   try {
-    const response = await axios.get(OFERTAS_API);
-    return response.data.ofertas.map(o => o.descripcion).join('\n');
-  } catch (error) {
-    console.error('Error al obtener ofertas:', error.message);
-    return 'No pudimos cargar las ofertas en este momento.';
+    const { data } = await axios.get('https://grp-ia.com/bitacora-residentes/ofertas.php');
+    fs.appendFileSync('api_log.txt', `[OFERTAS] API Response: ${JSON.stringify(data)}\n`);
+
+    if (!data || !Array.isArray(data.ofertas) || data.ofertas.length === 0) {
+      fs.appendFileSync('api_log.txt', '[OFERTAS] No hay datos válidos de ofertas.\n');
+      return '';
+    }
+
+    const textoOfertas = data.ofertas.map(item => item.descripcion).join(' | ');
+    fs.appendFileSync('api_log.txt', `[OFERTAS] Texto generado: ${textoOfertas}\n`);
+    return textoOfertas;
+  } catch (err) {
+    fs.appendFileSync('api_log.txt', `❌ Error al obtener ofertas: ${err.message}\n`);
+    return '';
   }
 }
 

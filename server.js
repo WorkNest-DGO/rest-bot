@@ -1,19 +1,14 @@
-const fs = require('fs');
 const express = require('express');
-const cors = require('cors');
-const path = require('path');
-const axios = require('axios');
+const app = express();
+const dotenv = require('dotenv');
+dotenv.config();
 
-function configureAuxiliaryRoutes(app) {
-  // Configuración de CORS
-  app.use(cors({
-    origin: 'http://localhost:3001',
-    methods: 'GET,POST,PUT,DELETE',
-    allowedHeaders: ['Content-Type', 'Authorization'],
-  }));
+const webhookRouter = require('./webhook'); // conexión del webhook
 
+app.use(express.json());
+app.use('/webhook', webhookRouter); // ruta base para webhook
 
-
-}
-
-module.exports = configureAuxiliaryRoutes;
+const PORT = process.env.PORT || 3001;
+app.listen(PORT, () => {
+  console.log(`Servidor corriendo en puerto ${PORT}`);
+});

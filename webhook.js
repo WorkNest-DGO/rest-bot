@@ -4,7 +4,7 @@ const handleIncomingMessage = require('./messageHandling');
 const verifyToken = process.env.VERIFY_TOKEN;
 
 // Ruta de verificación para Webhook
-router.get('/webhook', (req, res) => {
+router.get('/', (req, res) => {
   const mode = req.query['hub.mode'];
   const token = req.query['hub.verify_token'];
   const challenge = req.query['hub.challenge'];
@@ -17,7 +17,7 @@ router.get('/webhook', (req, res) => {
 });
 
 // Ruta POST para recibir mensajes de WhatsApp
-router.post('/webhook', async (req, res) => {
+router.post('/', async (req, res) => {
   try {
     if (req.body.object === 'whatsapp') {
       req.body.entry.forEach(async (entry) => {

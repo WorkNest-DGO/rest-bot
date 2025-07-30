@@ -54,7 +54,7 @@ module.exports = async (req, res) => {
     // Procesar acción
     switch (action) {
       case "saludo":
-        await enviarPlantillaWhatsApp(from, "saludo_inicial");
+        await enviarPlantillaWhatsApp(from, "menu_inicio");
         break;
 
       case "menu_hoy":

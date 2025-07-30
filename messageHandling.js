@@ -1,122 +1,67 @@
-require("dotenv").config();
-const axios = require('axios');
-const fs = require('fs');
 const {
-  sendTemplate,
-  sendText,
-  sendWelcomeMessage,
-  sendMainMenu,
-  sendTodayMenu,
-  sendDailyOffers,
+  sendMenuInicio,
+  sendMenuHoy,
+  sendOfertasDia,
+  sendTextMessage,
 } = require('./whatsappTemplates');
+const axios = require('axios');
 
-const greetings = [
-  'hola',
-  'buenos dias',
-  'buenas tardes',
-  'hey',
-  'que tal',
-  'saludos',
-];
+// URLS de las APIs (puedes ajustar a tus rutas reales)
+const MENU_API = 'https://grp-ia.com/bitacora-residentes/menu.php';
+const OFERTAS_API = 'https://grp-ia.com/bitacora-residentes/ofertas.php';
 
-const removeAccents = (text) =>
-  text.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-
-
-function ofertasDia(to, ofertas) {
-  const bodyText = ofertas.join('\n');
-  return sendDailyOffers(to, bodyText);
-}
-
-async function menuHoy(to, platillos) {
-  const bodyText = platillos.join ? platillos.join('\n') : platillos;
-  return sendTodayMenu(to, bodyText);
-}
-
-async function processMenuHoy(to) {
+async function getMenuItems() {
   try {
-    const { data } = await axios.get('https://grp-ia.com/bitacora-residentes/ofertas.php');
-
-    if (!data || !Array.isArray(data.menu)) {
-      throw new Error("Formato inesperado: 'menu' no es arreglo o está ausente");
-    }
-
-    const platillos = data.menu.map(item => `${item.nombre} $${item.precio}`).join(' | ');
-    await menuHoy(to, platillos);
-  } catch (err) {
-    console.error('❌ Error fetching menu:', err.message);
-    fs.appendFileSync('api_log.txt', `❌ Error fetching menu: ${err.message}\n`);
-    await sendText(to, 'No pudimos consultar el menú en este momento.');
+    const response = await axios.get(MENU_API);
+    return response.data.menu.map(item => `${item.nombre} - $${item.precio}`).join('\n');
+  } catch (error) {
+    console.error('Error al obtener menú:', error.message);
+    return 'No pudimos cargar el menú en este momento.';
   }
 }
 
-async function processOfertasDia(to) {
+async function getOfertas() {
   try {
-    const { data } = await axios.get('https://grp-ia.com/bitacora-residentes/ofertas.php');
-
-    if (!data || !Array.isArray(data.ofertas)) {
-      throw new Error("Formato inesperado: 'ofertas' no es arreglo o está ausente");
-    }
-
-    const ofertas = data.ofertas.map(item => `${item.descripcion}`).join(' | ');
-    await ofertasDia(to, ofertas);
-  } catch (err) {
-    console.error('❌ Error fetching ofertas:', err.message);
-    fs.appendFileSync('api_log.txt', `❌ Error fetching ofertas: ${err.message}\n`);
-    await sendText(to, 'No hay ofertas disponibles.');
+    const response = await axios.get(OFERTAS_API);
+    return response.data.ofertas.map(o => o.descripcion).join('\n');
+  } catch (error) {
+    console.error('Error al obtener ofertas:', error.message);
+    return 'No pudimos cargar las ofertas en este momento.';
   }
 }
 
-async function handleIncomingMessage(phoneId, from, message) {
-  if (!phoneId || !from || !message) {
-    console.warn('phoneId, from o message no definidos');
-    fs.appendFileSync('api_log.txt', 'phoneId, from o message no definidos\n');
-    return;
-  }
-
-  const to = from.startsWith("521") ? from.replace("521", "52") : from;
-
-  const logMsg = `📥 Mensaje recibido tipo ${message.type} de ${from} → enviado a ${to}`;
-  console.log(logMsg);
-  fs.appendFileSync('api_log.txt', logMsg + '\n');
-
+async function handleIncomingMessage(message, phone) {
   switch (message.type) {
-    case 'text': {
-      const body = message.text?.body || '';
-      const normalized = removeAccents(body.trim().toLowerCase());
-      const isGreeting = greetings.includes(normalized) || normalized === 'hola';
-      if (isGreeting) {
-        await sendWelcomeMessage(to);
-      } else if (normalized === 'menu_hoy') {
-        await processMenuHoy(to);
-      } else if (normalized === 'ofertas_dia') {
-        await processOfertasDia(to);
-      } else {
-        await sendMainMenu(to);
-      }
+    case 'text':
+      await sendMenuInicio(phone);
       break;
-    }
-    case 'interactive': {
-      const id =
-        message.interactive?.button_reply?.id ||
-        message.interactive?.list_reply?.id || '';
-      switch (id) {
-        case 'menu_hoy':
-          await processMenuHoy(to);
+
+    case 'interactive':
+      const interaction = message.interactive;
+      const buttonId = interaction.button_reply?.id || interaction.list_reply?.id;
+
+      switch (buttonId) {
+        case 'ver_menu':
+          const menuString = await getMenuItems();
+          await sendMenuHoy(phone, menuString);
           break;
-        case 'ofertas_dia':
-          await processOfertasDia(to);
+
+        case 'ver_ofertas':
+          const ofertasString = await getOfertas();
+          await sendOfertasDia(phone, ofertasString);
           break;
+
         case 'salir':
-          await sendMainMenu(to);
+          await sendTextMessage(phone, 'Gracias por visitarnos. ¡Buen provecho!');
           break;
+
         default:
-          await sendMainMenu(to);
+          await sendTextMessage(phone, 'Opción no válida. Por favor, intenta de nuevo.');
       }
       break;
-    }
+
     default:
-      console.log('Tipo de mensaje no soportado');
+      await sendTextMessage(phone, 'No pude entender tu mensaje. ¿Podrías intentarlo de nuevo?');
   }
 }
 

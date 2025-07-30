@@ -1,24 +1,19 @@
-require("dotenv").config();
-const express = require("express");
-const bodyParser = require("body-parser");
-const cors = require("cors");
-const fs = require("fs");
-const { verifyWebhook } = require("./webhookVerification");
-const webhookRoutes = require("./webhook");
+const fs = require('fs');
+const express = require('express');
+const cors = require('cors');
+const path = require('path');
+const axios = require('axios');
 
-const app = express();
-const PORT = process.env.PORT || 3001;
+function configureAuxiliaryRoutes(app) {
+  // Configuración de CORS
+  app.use(cors({
+    origin: 'http://localhost:3001',
+    methods: 'GET,POST,PUT,DELETE',
+    allowedHeaders: ['Content-Type', 'Authorization'],
+  }));
 
-app.use(cors());
-app.use(bodyParser.json());
 
-// Ruta de verificación (GET)
-app.get("/webhook", verifyWebhook);
 
-// Ruta de recepción de mensajes (POST)
-app.use("/webhook", webhookRoutes);
+}
 
-app.listen(PORT, () => {
-  console.log(`Webhook listening on port ${PORT}`);
-  fs.appendFileSync('api_log.txt', `Webhook listening on port ${PORT}\n`);
-});
+module.exports = configureAuxiliaryRoutes;

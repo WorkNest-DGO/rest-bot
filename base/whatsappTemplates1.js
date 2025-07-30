@@ -2,8 +2,8 @@ const axios = require("axios");
 const fs = require("fs");
 
 // Token de acceso generado en la consola de Meta
-const accessToken = "EAAMcL1SSNA4BO7KPcD2MfTfGGuZCEaXZAqT4bHRZBZCR4bxc40ZCyxHMNIuZBc38uF5u7LGmiS43aE01Pkm6ZBovG2FLesuqlfiVUfM3eTOE7ls8MpOAo7bqDKHglwN4YNgktolUbQq9jORH4z8pgClUV1ELEtQWvAObsQYMJviPq77AeH1gjRNFwdaDBkQhxGg";
-const phoneNumberId = "451519058052186";
+const accessToken = "EAALCD9w1tyQBPNcZBxgrxbvJbn3qxyojxs55Mgu3z0Qlh3JzcHoOBLxED2vZCKiPqJefkZA1rDYEdlsIZBAynwMnLoq65yB1Y6EPkZB7BZAZCMtnqfewEGPZAkRsOb5y6AawvxAUIF4S3bH8wfsfgm4PBzMwIA3Ka2omjlomNLUAlVAbZBW2rmbnR0SSp9OzNCp7q7AZDZD";
+const phoneNumberId = "671642199369915";
 
 // Función para limpiar y validar el número
 function procesarNumero(to) {
@@ -11,9 +11,27 @@ function procesarNumero(to) {
   return to.startsWith("521") ? to.replace(/^521/, "52") : to;
 }
 
+  if (!token) {
+    console.warn('⚠️  WHATSAPP_TOKEN no definido');
+    fs.appendFileSync('api_log.txt', '⚠️  WHATSAPP_TOKEN no definido\n');
+    return;
+  }
+
+  if (!phoneId) {
+    console.warn('⚠️  phoneId no definido');
+    fs.appendFileSync('api_log.txt', '⚠️  phoneId no definido\n');
+    return;
+  }
+
+  if (!to) {
+    console.warn('⚠️  to no definido');
+    fs.appendFileSync('api_log.txt', '⚠️  to no definido\n');
+    return;
+  }
+  
 // Función genérica para construir y enviar payloads
 async function enviarPayload(to, templateName, components = []) {
-  const url = `https://graph.facebook.com/v21.0/${phoneNumberId}/messages`;
+  const url = `https://graph.facebook.com/v23.0/${phoneNumberId}/messages`;
   to = procesarNumero(to);
 
   const payload = {

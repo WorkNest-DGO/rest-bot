@@ -1,131 +1,70 @@
 const axios = require('axios');
-const fs = require('fs');
+require('dotenv').config();
 
-async function sendTemplate(templateName, to, components = []) {
-  const token = process.env.WHATSAPP_TOKEN;
-  const phoneId = process.env.PHONE_NUMBER_ID;
+const whatsappApiUrl = 'https://graph.facebook.com/v19.0/';
+const phoneId = process.env.PHONE_NUMBER_ID;
+const token = process.env.WHATSAPP_TOKEN;
 
-  if (!token) {
-    console.warn('⚠️  WHATSAPP_TOKEN no definido');
-    fs.appendFileSync('api_log.txt', '⚠️  WHATSAPP_TOKEN no definido\n');
-    return;
-  }
+async function sendTemplateMessage(to, templateName, variableText = []) {
+  const payload = {
+    messaging_product: 'whatsapp',
+    to,
+    type: 'template',
+    template: {
+      name: templateName,
+      language: { code: 'es_MX' },
+    },
+  };
 
-  if (!phoneId) {
-    console.warn('⚠️  phoneId no definido');
-    fs.appendFileSync('api_log.txt', '⚠️  phoneId no definido\n');
-    return;
-  }
-
-  if (!to) {
-    console.warn('⚠️  to no definido');
-    fs.appendFileSync('api_log.txt', '⚠️  to no definido\n');
-    return;
-  }
-
-  const url = `https://graph.facebook.com/v23.0/${phoneId}/messages`;
-
-  try {
-    const api_logend = `📤 Enviando plantilla "${templateName}" a ${to}`;
-    console.log(api_logend);
-    fs.appendFileSync('api_log.txt', api_logend + '\n');
-
-    const payload = {
-      messaging_product: 'whatsapp',
-      to,
-      type: 'template',
-      template: {
-        name: templateName,
-        language: { code: 'es_MX' },
-        ...(components && components.length > 0 ? { components } : {})
-      }
-    };
-
-    await axios.post(
-      url,
-      payload,
+  if (variableText.length > 0) {
+    payload.template.components = [
       {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      }
-    );
-    console.log(`✅ Plantilla '${templateName}' enviada a ${to}`);
-    fs.appendFileSync('api_log.txt', `✅ Plantilla '${templateName}' enviada a ${to}\n`);
-  } catch (error) {
-    console.error('❌ Error enviando plantilla:', error.response?.data || error.message);
-    const errLog = `❌ Error al enviar plantilla "${templateName}" a ${to}: ${error.message}`;
-    fs.appendFileSync('api_log.txt', errLog + '\n');
-  }
-}
-
-async function sendText(to, text) {
-  const token = process.env.WHATSAPP_TOKEN;
-  const phoneId = process.env.PHONE_NUMBER_ID;
-
-  if (!token || !phoneId || !to) {
-    const warn = '⚠️ Falta token, phoneId o destinatario';
-    console.warn(warn);
-    fs.appendFileSync('api_log.txt', warn + '\n');
-    return;
-  }
-
-  const url = `https://graph.facebook.com/v23.0/${phoneId}/messages`;
-
-  try {
-    const log = `📤 Enviando texto a ${to}`;
-    console.log(log);
-    fs.appendFileSync('api_log.txt', log + '\n');
-
-    await axios.post(
-      url,
-      {
-        messaging_product: 'whatsapp',
-        to,
-        text: { body: text }
+        type: 'body',
+        parameters: variableText.map(text => ({ type: 'text', text })),
       },
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      }
-    );
-    fs.appendFileSync('api_log.txt', `✅ Texto enviado a ${to}\n`);
+    ];
+  }
+
+  try {
+    await axios.post(`${whatsappApiUrl}${phoneId}/messages`, payload, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
   } catch (error) {
-    console.error('❌ Error enviando texto:', error.response?.data || error.message);
-    fs.appendFileSync('api_log.txt', `❌ Error enviando texto a ${to}: ${error.message}\n`);
+    console.error(`Error enviando template '${templateName}':`, error.response?.data || error.message);
   }
 }
 
-async function sendWelcomeMessage(to) {
-  return sendTemplate('menu_inicio', to);
+// Plantillas específicas
+
+function sendMenuInicio(to) {
+  return sendTemplateMessage(to, 'menu_inicio');
 }
 
-async function sendMainMenu(to) {
-  return sendTemplate('menu_inicio', to);
+function sendMenuHoy(to, menuText) {
+  return sendTemplateMessage(to, 'menu_hoy', [menuText]);
 }
 
-async function sendTodayMenu(to, itemsText) {
-  const components = itemsText
-    ? [{ type: 'body', parameters: [{ type: 'text', text: itemsText }] }]
-    : [];
-  return sendTemplate('menu_hoy', to, components);
+function sendOfertasDia(to, ofertasText) {
+  return sendTemplateMessage(to, 'ofertas_dia', [ofertasText]);
 }
 
-async function sendDailyOffers(to, offersText) {
-  const components = offersText
-    ? [{ type: 'body', parameters: [{ type: 'text', text: offersText }] }]
-    : [];
-  return sendTemplate('ofertas_dia', to, components);
+function sendTextMessage(to, bodyText) {
+  const payload = {
+    messaging_product: 'whatsapp',
+    to,
+    text: { body: bodyText },
+  };
+
+  return axios.post(`${whatsappApiUrl}${phoneId}/messages`, payload, {
+    headers: { Authorization: `Bearer ${token}` },
+  }).catch(error => {
+    console.error('Error enviando mensaje de texto:', error.response?.data || error.message);
+  });
 }
 
 module.exports = {
-  sendTemplate,
-  sendText,
-  sendWelcomeMessage,
-  sendMainMenu,
-  sendTodayMenu,
-  sendDailyOffers,
+  sendMenuInicio,
+  sendMenuHoy,
+  sendOfertasDia,
+  sendTextMessage,
 };

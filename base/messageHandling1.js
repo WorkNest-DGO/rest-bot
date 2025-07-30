@@ -5,17 +5,15 @@ const fs = require("fs");
 const {
   enviarPlantillaWhatsApp,
   enviarPlantillaWhatsApp2,
-  enviarPlantillaOrdenPago,
-  enviarPlantillaConsultaPredial,
-  enviarPlantillaErrorGenerico,
-  enviarPlantillaImagenTlaquepaque,
-  enviarPlantillaPago,
+  enviarPlantillaOferta,
+  enviarPlantillaMenu,
+  enviarPlantillaErrorGenerico
 } = require("./whatsappTemplates");
 
-const municipio = "Tlaquepaque";
-const apiUrlPadron = "http://198.251.77.121/api/caja/api/api/busquedas/padron";
-const apiUrlLiquidacion = "http://198.251.77.121/api/caja/api/api/liquidacions/numero";
-const authToken =   "Bearer eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJzaXN0ZW1hIiwiYXV0aCI6IkFMVEFfRU1QTEVBRE9TLERJU0NSRUNJT05BTCxMSVFVSURBQ0lPTl9NQU5VQUwsUk9MRV9BRE1JTiIsInBzdG8iOiJbXSIsIm5tIjoic2lzdGVtYSIsImFwMSI6InNpc3RlbWEiLCJhcDIiOiJzaXN0ZW1hIiwiaWRzdSI6MCwidXNlciI6MTAzNDMsImV4cCI6MTczMzcyMjUwNX0.F1JQ4v07Fq9sewN-4VT_3Q6ufGcrUjJ7wep-P080uLKLc06DDJOSPeOBELKX-cfkwBvvS3BCCD8FuSQim4A4hw";
+const negocio = "Tokyo Sushi Prime";
+const apiUrlOferta = "https://grp-ia.com/bitacora-residentes/ofertas.php";
+const apiUrlMenu = "https://grp-ia.com/bitacora-residentes/ofertas.php";
+const authToken =   "Bearer EAALCD9w1tyQBPNcZBxgrxbvJbn3qxyojxs55Mgu3z0Qlh3JzcHoOBLxED2vZCKiPqJefkZA1rDYEdlsIZBAynwMnLoq65yB1Y6EPkZB7BZAZCMtnqfewEGPZAkRsOb5y6AawvxAUIF4S3bH8wfsfgm4PBzMwIA3Ka2omjlomNLUAlVAbZBW2rmbnR0SSp9OzNCp7q7AZDZD";
 // Token truncado para simplificación
 
 module.exports = async (req, res) => {
@@ -47,22 +45,13 @@ module.exports = async (req, res) => {
     // Determinar acción
     if (palabrasClaveSaludo.some((saludo) => text.includes(saludo))) {
       action = "saludo";
-    } else if (text.includes("realizar pago") || buttonReply === "btn_realizar_pago") {
-      action = "calculo_prediales";
-    } else if (text.includes("predial") || buttonReply === "btn_predial") {
-      action = "solicitar_predial";
-    } else if (text.includes("crear orden de pago") || buttonReply === "btn_crear_orden_pago") {
-      action = "confirmar_pago";
-    } else if (/^pago:\w+$/i.test(text)) {
-      extractedValue = text.split(":")[1];
-      action = "orden_pago";
-    } else if (/^ver:(\w+)$/i.test(text)) {
-      extractedValue = text.split(":")[1];
-      action = "consulta_predial";
-    } else if (/^orden:(\w+)$/i.test(text)) {
-      extractedValue = text.split(":")[1];
-      action = "pagos_finales";
-    }
+    } else if (text.includes("Ver menu de hoy") || buttonReply === "btn_menu_hoy") {
+      action = "menu_hoy";
+    } else if (text.includes("Ver ofertas del dia") || buttonReply === "btn_ofertas_dia") {
+      action = "ofertas_dia";
+    } else if (text.includes("salir") || buttonReply === "btn_salir") {
+      action = "salir";
+    } 
 
     // Procesar acción
     switch (action) {
@@ -70,28 +59,16 @@ module.exports = async (req, res) => {
         await enviarPlantillaWhatsApp(from, "saludo_inicial");
         break;
 
-      case "solicitar_predial":
-        await enviarPlantillaWhatsApp(from, "solicitar_clave_catastral");
+      case "menu_hoy":
+        await handleOrdenMenu(from, extractedValue);
         break;
 
-      case "confirmar_pago":
-        await enviarPlantillaWhatsApp2(from, "confirmar_pago", [extractedValue || "00000000000000000"]);
+      case "ofertas_dia":
+        await handleOrdenOferta(from, extractedValue);
         break;
 
-      case "orden_pago":
-        await handleOrdenPago(from, extractedValue);
-        break;
-
-      case "consulta_predial":
-        await handleConsultaPredial(from, extractedValue);
-        break;
-
-      case "pagos_finales":
-        await handlePagosFinales(from, extractedValue);
-        break;
-
-      case "calculo_prediales":
-        await enviarPlantillaImagenTlaquepaque(from);
+      case "salir":
+        await enviarPlantillaWhatsApp2(from, "salir");
         break;
 
       default:
@@ -105,111 +82,46 @@ module.exports = async (req, res) => {
   }
 };
 
-// Función para manejar "orden_pago"
-// Función para manejar "orden_pago"
-async function handleOrdenPago(from, extractedValue) {
-  try {
-    const payload = { liquidaciones: extractedValue };
 
-    // Solicitar la generación del reporte al API
-    const response = await axios.post(
-      "http://198.251.77.121/api/caja/api/api/generar-liquidacion-masivia-atlixco",
-      payload,
-      {
-        headers: {
-          Authorization: authToken,
-          "Content-Type": "application/json",
-        },
-      }
-    );
+// Función para manejar "menu dia"
+async function handleOrdenMenu(from, extractedValue) {
+    try {
+    const { data } = await axios.get('https://grp-ia.com/bitacora-residentes/ofertas.php');
 
-    // Verificar si se obtuvo el reporte en base64
-    const pdfBase64 = response.data?.reporte;
-    if (!pdfBase64) throw new Error("No se encontró reporte en la respuesta.");
-
-    // Decodificar base64 y preparar el archivo
-    const buffer = Buffer.from(pdfBase64, "base64");
-    const timestamp = new Date().toISOString().replace(/[:\-T]/g, "").slice(0, 12); // Formato: yyyymmddhhmm
-    const fileName = `${extractedValue}-${timestamp}.pdf`;
-
-    // Determinar el entorno
-    const isLocal = process.env.ENVIRONMENT === "local"; // Usa una variable de entorno para definir el entorno
-    const localPath = "C:\\path\\to\\save\\pdf\\"; // Ruta local
-    const serverPath = "/var/www/html/pdf/"; // Ruta en el servidor
-    const savePath = isLocal ? localPath : serverPath;
-    const filePath = path.join(savePath, fileName);
-
-    // Asegurarse de que la carpeta existe
-    if (!fs.existsSync(savePath)) {
-      fs.mkdirSync(savePath, { recursive: true });
+    if (!data || !Array.isArray(data.menu)) {
+      throw new Error("Formato inesperado: 'menu' no es arreglo o está ausente");
     }
 
-    // Guardar el archivo PDF
-    fs.writeFileSync(filePath, buffer);
-    console.log(`Archivo guardado correctamente en: ${filePath}`);
-
-    // Generar la URL para acceder al archivo
-    const fileUrl = isLocal
-      ? `http://localhost/pdf/${fileName}`
-      : `https://grp-ia.com/report-whats-app/pdf/${fileName}`;
-
-    // Enviar la plantilla con los datos generados
-    await enviarPlantillaOrdenPago(from, municipio,  fileUrl);
-  } catch (error) {
-    console.error("Error en orden_pago:", error);
-    // Guardar log del error
-    fs.appendFileSync(
-      "api_log.txt",
-      `${new Date().toISOString()} - Error en orden_pago: ${error.message}\n`
-    );
-
-    // Notificar al usuario sobre el error
-    await enviarPlantillaErrorGenerico(from, "sin_reporte_pdf");
+    const platillos = data.menu.map(item => `${item.nombre} $${item.precio}`).join(' | ');
+    await enviarPlantillaMenu(from, menu);
+  } catch (err) {
+    console.error('❌ Error fetching menu:', err.message);
+    fs.appendFileSync('api_log.txt', `❌ Error fetching menu: ${err.message}\n`);
+    await enviarPlantillaErrorGenerico(to, 'No pudimos consultar el menú en este momento.');
   }
 }
 
-
-// Función para manejar "consulta_predial"
-async function handleConsultaPredial(from, extractedValue) {
-  const payload = { padron: "vw_padron_catastral_2", llave: "cve_catastral", valorLlave: extractedValue };
-
+// Función para manejar "ofertas"
+async function handleOrdenOferta(from, extractedValue) {
   try {
-    const response = await axios.post(apiUrlPadron, payload, {
-      headers: {
-        Authorization: authToken,
-        "Content-Type": "application/json",
-      },
-    });
+    const { data } = await axios.get('https://grp-ia.com/bitacora-residentes/ofertas.php');
 
-    const resultado = response.data?.[0];
-    if (!resultado) throw new Error("Sin resultados en la consulta.");
+    if (!data || !Array.isArray(data.ofertas)) {
+      throw new Error("Formato inesperado: 'ofertas' no es arreglo o está ausente");
+    }
 
-    const parameters = [
-      extractedValue,
-      resultado.ultimo_periodo_pagado || "Sin información",
-      resultado.nombre_ne || "Sin información",
-      resultado.direccion_ne || "Sin información",
-      resultado.localidad_ne || "Sin información",
-    ];
-    await enviarPlantillaConsultaPredial(from, parameters);
-  } catch (error) {
-    console.error("Error en consulta_predial:", error);
-    await enviarPlantillaErrorGenerico(from, "sin_resultados");
+    const ofertas = data.ofertas.map(item => `${item.descripcion}`).join(' | ');
+    await enviarPlantillaOferta(from, ofertas);
+  } catch (err) {
+    console.error('❌ Error fetching ofertas:', err.message);
+    fs.appendFileSync('api_log.txt', `❌ Error fetching ofertas: ${err.message}\n`);
+    await sendText(to, 'No hay ofertas disponibles.');
   }
 }
 
-// Función para manejar "pagos_finales"
-async function handlePagosFinales(from, extractedValue) {
-  try {
-    const response = await axios.get(`${apiUrlLiquidacion}/${extractedValue}`, {
-      headers: { Authorization: authToken },
-    });
-
-    const liquidacion = response.data;
-    const enlacePago = `https://grp-ia.com/whats/reportes/pago/${liquidacion.numeroLiquidacion}`;
-    await enviarPlantillaPago(from, liquidacion.numeroLiquidacion, liquidacion.total.toFixed(2), enlacePago);
-  } catch (error) {
-    console.error("Error en pagos_finales:", error);
-    await enviarPlantillaErrorGenerico(from, "sin_resultados");
+async function handleIncomingMessage(phoneId, from, message) {
+  if (!phoneId || !from || !message) {
+    console.warn('phoneId, from o message no definidos');
+    fs.appendFileSync('api_log.txt', 'phoneId, from o message no definidos\n');
+    return;
   }
-}

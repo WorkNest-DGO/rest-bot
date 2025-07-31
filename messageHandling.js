@@ -16,11 +16,13 @@ async function enviarPlantillaDesdeAPI({ from, url, templateName }) {
     const response = await fetch(url);
     if (!response.ok) throw new Error(`Status ${response.status}`);
     const data = await response.json();
-    const items = data.menu || data.ofertas || [];
-    const textos = Array.isArray(items)
-      ? items.map((i) => i.descripcion).filter(Boolean)
-      : [];
-    const textoFinal = textos.join("\n");
+    let items = [];
+    if (data.menu) {
+      items = data.menu.map((e) => `${e.nombre} - $${e.precio}`);
+    } else if (data.ofertas) {
+      items = data.ofertas.map((e) => e.descripcion);
+    }
+    const textoFinal = items.join("\n");
 
     const logsDir = path.join(__dirname, "logs");
     if (!fs.existsSync(logsDir)) fs.mkdirSync(logsDir, { recursive: true });

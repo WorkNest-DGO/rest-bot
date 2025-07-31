@@ -14,27 +14,6 @@ function sanitize(text) {
   return cleaned.slice(0, 1024);
 }
 
-// Plantilla para el menú del día
-templates["menu_hoy"] = async (to, menuText) => {
-  const components = [
-    {
-      type: "body",
-      parameters: [{ type: "text", text: sanitize(menuText) }],
-    },
-  ];
-  await enviarPayload(to, templates.MENU_HOY, components);
-};
-
-// Plantilla para ofertas del día
-templates["ofertas_dia"] = async (to, ofertasText) => {
-  const components = [
-    {
-      type: "body",
-      parameters: [{ type: "text", text: sanitize(ofertasText) }],
-    },
-  ];
-  await enviarPayload(to, "ofertas_dia", components);
-};
 
 // Token de acceso generado en la consola de Meta
 
@@ -77,8 +56,16 @@ async function enviarPayload(to, templateName, components = []) {
 }
 
 // Funciones específicas
-async function enviarPlantillaWhatsApp(to, templateName) {
-  await enviarPayload(to, templateName);
+async function enviarPlantillaWhatsApp(to, templateName, text = "") {
+  const components = text
+    ? [
+        {
+          type: "body",
+          parameters: [{ type: "text", text: sanitize(text) }],
+        },
+      ]
+    : [];
+  await enviarPayload(to, templateName, components);
 }
 
 

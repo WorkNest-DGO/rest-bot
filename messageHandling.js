@@ -14,7 +14,7 @@ async function handleIncomingMessage(data) {
     "debug_post_log.txt",
     `${new Date().toISOString()} - POST Request: ${JSON.stringify(data)}\n`
   );
-
+if (!payload.entry || !Array.isArray(payload.entry)) return;
   try {
     for (const entry of data.entry || []) {
       for (const change of entry.changes || []) {

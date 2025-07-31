@@ -1,26 +1,19 @@
 const express = require('express');
 const fs = require('fs');
-const messageHandling = require('./messageHandling');
+const handleIncomingMessage = require('./messageHandling');
 
 const router = express.Router();
 
-router.post('/', (req, res) => {
-  const log = `${new Date().toISOString()} - Payload Entrante: ${JSON.stringify(req.body, null, 2)}\n`;
-  fs.appendFileSync('debug_payload_log.txt', log);
-  console.log('📩 Mensaje recibido en /webhook');
-  try {
-    fs.appendFileSync(
-      'debug_payload_log.txt',
-      new Date().toISOString() +
-        ' - Payload Entrante: ' +
-        JSON.stringify(req.body, null, 2) +
-        '\n'
-    );
-  } catch (err) {
-    console.error('Error escribiendo el log:', err);
+router.post('/webhook', async (req, res) => {
+  const body = req.body;
+  fs.appendFileSync(
+    'debug_payload_log.txt',
+    new Date().toISOString() + ' - Payload Entrante: ' + JSON.stringify(body, null, 2) + '\n'
+  );
+  if (body.object === 'whatsapp') {
+    await handleIncomingMessage(body);
   }
-  
-  return messageHandling(req, res);
+  res.sendStatus(200);
 });
 
 module.exports = router;

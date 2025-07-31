@@ -7,8 +7,7 @@ const {
   enviarMensajeTexto,
 } = require("./whatsappTemplates");
 
-module.exports = async (req, res) => {
-  const data = req.body;
+async function handleIncomingMessage(data) {
 
   // Log de la solicitud entrante para depuración
   fs.appendFileSync(
@@ -18,7 +17,13 @@ module.exports = async (req, res) => {
 
   try {
     const message = data?.entry?.[0]?.changes?.[0]?.value?.messages?.[0];
-    if (!message) return res.status(400).send("No se encontraron mensajes.");
+    if (!message) {
+      fs.appendFileSync(
+        'debug_post_log.txt',
+        `${new Date().toISOString()} - No se encontraron mensajes\n`
+      );
+      return;
+    }
 
     const from = message.from;
     const text = message.text?.body?.toLowerCase() || "";
@@ -68,12 +73,14 @@ module.exports = async (req, res) => {
         console.log("No se encontró una acción correspondiente.");
     }
 
-    res.status(200).send("EVENT_RECEIVED");
+    fs.appendFileSync(
+      'debug_post_log.txt',
+      `${new Date().toISOString()} - Mensaje procesado correctamente\n`
+    );
   } catch (error) {
     console.error("Error procesando el mensaje:", error);
-    res.status(500).send("Error interno");
   }
-};
+}
 
 
 // Función para manejar "menu dia"
@@ -133,3 +140,4 @@ async function handleOrdenOferta(from) {
     await enviarMensajeTexto(from, 'No hay ofertas disponibles.');
   }
 }
+module.exports = handleIncomingMessage;

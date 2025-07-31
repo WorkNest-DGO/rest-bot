@@ -43,9 +43,33 @@ async function handleIncomingMessage(payload) {
   } else if (message.type === "button" && message.button?.payload) {
     const btnPayload = message.button.payload.toLowerCase();
     if (btnPayload === "ver menu de hoy") {
-      await sendTemplateMessage(from, "menu_hoy");
+      try {
+        const { data } = await axios.get("http://localhost:3000/api/menu_hoy");
+        const menuTexto = Array.isArray(data?.menu)
+          ? data.menu.map((m) => m.descripcion).join("\n")
+          : "";
+
+        if (!menuTexto) throw new Error("Formato inesperado");
+
+        await templates["menu_hoy"](from, menuTexto);
+      } catch (err) {
+        console.error("Error obteniendo menu_hoy:", err.message);
+        await sendTextMessage(from, "No se pudo cargar el menú.");
+      }
     } else if (btnPayload === "ver ofertas del dia") {
-      await sendTemplateMessage(from, "ofertas_dia");
+      try {
+        const { data } = await axios.get("http://localhost:3000/api/ofertas");
+        const ofertasTexto = Array.isArray(data?.ofertas)
+          ? data.ofertas.map((o) => o.descripcion).join("\n")
+          : "";
+
+        if (!ofertasTexto) throw new Error("Formato inesperado");
+
+        await templates["ofertas_dia"](from, ofertasTexto);
+      } catch (err) {
+        console.error("Error obteniendo ofertas_dia:", err.message);
+        await sendTextMessage(from, "No se pudo cargar las ofertas.");
+      }
     } else if (btnPayload === "salir") {
       await sendTextMessage(from, "¡Gracias por visitarnos!");
     }

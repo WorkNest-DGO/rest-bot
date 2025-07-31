@@ -1,0 +1,4 @@
+2025-07-31T16:32:20.377Z - Enviado: {"messaging_product":"whatsapp","to":"526183021446","type":"text","text":{"body":"No se pudo cargar el contenido."}}
+Respuesta: {"messaging_product":"whatsapp","contacts":[{"input":"526183021446","wa_id":"5216183021446"}],"messages":[{"id":"wamid.HBgNNTIxNjE4MzAyMTQ0NhUCABEYEkREOUE3QzM1QTM4NDZGNTYyNwA="}]}
+2025-07-31T16:32:21.237Z - Enviado: {"messaging_product":"whatsapp","to":"526183021446","type":"template","template":{"name":"ofertas_dia","language":{"code":"es_MX"},"components":[{"type":"body","parameters":[{"type":"text","text":"2x1 en Rollos seleccionados todo el día 20% de descuento en bebidas japonesas Combo Lunch: Roll + Agua + Postre por $150"}]}]}}
+Respuesta: {"messaging_product":"whatsapp","contacts":[{"input":"526183021446","wa_id":"5216183021446"}],"messages":[{"id":"wamid.HBgNNTIxNjE4MzAyMTQ0NhUCABEYEkVDMTNDQjhBMjBGN0E5OEVDMQA=","message_status":"accepted"}]}

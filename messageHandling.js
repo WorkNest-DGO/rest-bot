@@ -86,13 +86,13 @@ async function handleIncomingMessage(payload) {
     const btnPayload = message.button.payload.toLowerCase();
     if (btnPayload === "ver menu de hoy") {
       await enviarPlantillaDesdeAPI({
-        url: "http://localhost:3000/api/menu_hoy",
+        url: "https://grp-ia.com/bitacora-residentes/menu.php",
         templateName: "menu_hoy",
         from,
       });
     } else if (btnPayload === "ver ofertas del dia") {
       await enviarPlantillaDesdeAPI({
-        url: "http://localhost:3000/api/ofertas",
+        url: "https://grp-ia.com/bitacora-residentes/ofertas.php",
         templateName: "ofertas_dia",
         from,
       });

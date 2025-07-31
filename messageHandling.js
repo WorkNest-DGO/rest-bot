@@ -7,116 +7,48 @@ const {
   enviarMensajeTexto,
 } = require("./whatsappTemplates");
 
-async function handleIncomingMessage(payload) {
+// Aliases para mayor claridad
+const sendTemplateMessage = enviarPlantillaWhatsApp;
+const sendTextMessage = enviarMensajeTexto;
 
+async function handleIncomingMessage(payload) {
   // Log de la solicitud entrante para depuración
   fs.appendFileSync(
     "debug_post_log.txt",
     `${new Date().toISOString()} - POST Request: ${JSON.stringify(payload)}\n`
   );
-  if (!payload.entry || !Array.isArray(payload.entry)) return;
-  try {
-    for (const entry of payload.entry || []) {
-      for (const change of entry.changes || []) {
-        const value = change.value || {};
-        if (!Array.isArray(value.messages)) {
-          continue;
-        }
 
-        // Registro de todos los mensajes entrantes
-        for (const msg of value.messages) {
-          const type = msg.type || "unknown";
-          let contenido = "";
+  // Validación básica de la estructura del payload
+  const firstEntry = payload.entry?.[0];
+  const firstChange = firstEntry?.changes?.[0];
+  const firstMessage = firstChange?.value?.messages?.[0];
 
-          if (type === "text") {
-            contenido = msg.text?.body || "";
-          } else if (type === "interactive") {
-            if (msg.interactive?.button_reply?.title) {
-              contenido = msg.interactive.button_reply.title;
-            } else if (msg.interactive?.list_reply?.title) {
-              contenido = msg.interactive.list_reply.title;
-            }
-          } else if (type === "image") {
-            contenido = "imagen recibida";
-          } else if (type === "audio") {
-            contenido = "audio recibido";
-          } else if (type === "video") {
-            contenido = "video recibido";
-          } else if (type === "document") {
-            contenido = "documento recibido";
-          } else if (type === "sticker") {
-            contenido = "sticker recibido";
-          } else {
-            contenido = `${type} recibido`;
-          }
+  if (!firstMessage) {
+    console.log("Payload sin mensajes válidos");
+    return;
+  }
 
-          const logLine = `${new Date().toISOString()} - \ud83d\udce9 Mensaje del usuario (type: ${type}): "${contenido}"\n`;
-          fs.appendFileSync("debug_payload_log.txt", logLine);
-          console.log(`\ud83d\udce9 Mensaje del usuario (type: ${type}): "${contenido}"`);
-        }
+  const message = firstMessage;
+  console.log("\ud83d\udce9 Mensaje recibido:", message);
 
-        const message = value.messages[0];
-        if (!message) {
-          continue;
-        }
+  if (!message.type) return;
 
-        const from = message.from;
-        let text = "";
+  const from = message.from;
 
-        if (message.type === "text") {
-          text = message.text?.body?.toLowerCase() || "";
-        } else if (message.type === "interactive" && message.interactive?.button_reply?.title) {
-          text = message.interactive.button_reply.title.toLowerCase();
-        } else {
-          continue;
-        }
-   // Palabras clave
-    const palabrasClaveSaludo = [
-      "hola", "hi", "buen día", "buenos días", "hello", "qué tal", "buenas tardes",
-      "buenas noches", "saludos", "hey", "cómo estás", "qué onda",
-    ];
-        console.log("Mensaje recibido:", text);
-
-    if (palabrasClaveSaludo.some((saludo) => text.includes(saludo))) {
-      action = "saludo";
-        } else if (text.includes("menu")|| buttonReply === "btn_menu_hoy") {
-           action = "menu_hoy";
-        } else if (text.includes("oferta"|| buttonReply === "btn_ofertas_dia")) {
-          action = "ofertas_dia";
-        } else if (text.includes("salir"|| buttonReply === "btn_salir")) {
-         action = "salir";
-        } else {
-          console.log("No se encontró una acción correspondiente.");
-        }
-switch (action) {
-      case "saludo":
-        await enviarPlantillaWhatsApp(from, "menu_inicio");
-        break;
-      case "menu_hoy":
-         await handleOrdenMenu(from);
-        break;
-
-      case "ofertas_dia":
-         await handleOrdenOferta(from);
-        break;
-
-      case "salir":
-         await enviarMensajeTexto(from, "Gracias por tu visita. ¡Hasta pronto!");
-        break;
-
-      default:
-        console.log("No se encontró una acción correspondiente.");
+  if (message.type === "text") {
+    const body = message.text?.body?.toLowerCase() || "";
+    if (body.includes("hola")) {
+      await sendTemplateMessage(from, "menu_inicio");
     }
-
-      }
+  } else if (message.type === "button" && message.button?.payload) {
+    const btnPayload = message.button.payload.toLowerCase();
+    if (btnPayload === "ver menu de hoy") {
+      await sendTemplateMessage(from, "menu_hoy");
+    } else if (btnPayload === "ver ofertas del dia") {
+      await sendTemplateMessage(from, "ofertas_dia");
+    } else if (btnPayload === "salir") {
+      await sendTextMessage(from, "¡Gracias por visitarnos!");
     }
-
-    fs.appendFileSync(
-      'debug_post_log.txt',
-      `${new Date().toISOString()} - Mensaje procesado correctamente\n`
-    );
-  } catch (error) {
-    console.error("Error procesando el mensaje:", error);
   }
 }
 

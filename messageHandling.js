@@ -1,6 +1,5 @@
 const fs = require("fs");
 const path = require("path");
-const axios = require("axios");
 const {
   templates,
   enviarPlantillaWhatsApp,
@@ -11,7 +10,48 @@ const {
 // Aliases para mayor claridad
 const sendTemplateMessage = enviarPlantillaWhatsApp;
 const sendTextMessage = enviarMensajeTexto;
-const logPath = path.join(__dirname, "logs", "api_log.txt");
+
+async function enviarPlantillaDesdeAPI({ from, url, templateName }) {
+  try {
+    const response = await fetch(url);
+    if (!response.ok) throw new Error(`Status ${response.status}`);
+    const data = await response.json();
+    const items = data.menu || data.ofertas || [];
+    const textos = Array.isArray(items)
+      ? items.map((i) => i.descripcion).filter(Boolean)
+      : [];
+    const textoFinal = textos.join("\n");
+
+    const logsDir = path.join(__dirname, "logs");
+    if (!fs.existsSync(logsDir)) fs.mkdirSync(logsDir, { recursive: true });
+    const logEntry =
+      new Date().toISOString() +
+      " - Respuesta API " +
+      templateName +
+      ": " +
+      JSON.stringify(data) +
+      "\n";
+    fs.appendFileSync(path.join(logsDir, "api_log.txt"), logEntry);
+
+    if (textoFinal) {
+      await sendTemplateMessage(from, templateName, textoFinal);
+    } else {
+      await sendTextMessage(from, "No se pudo cargar el contenido.");
+    }
+  } catch (error) {
+    const logsDir = path.join(__dirname, "logs");
+    if (!fs.existsSync(logsDir)) fs.mkdirSync(logsDir, { recursive: true });
+    const logEntry =
+      new Date().toISOString() +
+      " - Error API " +
+      templateName +
+      ": " +
+      error.message +
+      "\n";
+    fs.appendFileSync(path.join(logsDir, "api_log.txt"), logEntry);
+    await sendTextMessage(from, "No se pudo cargar el contenido.");
+  }
+}
 
 async function handleIncomingMessage(payload) {
   // Log de la solicitud entrante para depuración
@@ -45,37 +85,17 @@ async function handleIncomingMessage(payload) {
   } else if (message.type === "button" && message.button?.payload) {
     const btnPayload = message.button.payload.toLowerCase();
     if (btnPayload === "ver menu de hoy") {
-      try {
-        const { data } = await axios.get("https://grp-ia.com/bitacora-residentes/menu.php");
-        fs.appendFileSync(logPath, `${new Date().toISOString()} - MENU_HOY: ${JSON.stringify(data)}\n`);
-        const menuTexto = Array.isArray(data?.menu)
-          ? data.menu.map((m) => m.descripcion).join("\n")
-          : "";
-
-        if (!menuTexto) throw new Error("Sin descripciones");
-
-        await templates["menu_hoy"](from, menuTexto);
-      } catch (err) {
-        console.error("Error obteniendo menu_hoy:", err.message);
-        fs.appendFileSync(logPath, `${new Date().toISOString()} - ERROR MENU_HOY: ${err.message}\n`);
-        await sendTextMessage(from, "No se pudo cargar el menú u ofertas.");
-      }
+      await enviarPlantillaDesdeAPI({
+        url: "http://localhost:3000/api/menu_hoy",
+        templateName: "menu_hoy",
+        from,
+      });
     } else if (btnPayload === "ver ofertas del dia") {
-      try {
-        const { data } = await axios.get("https://grp-ia.com/bitacora-residentes/ofertas.php");
-        fs.appendFileSync(logPath, `${new Date().toISOString()} - OFERTAS_DIA: ${JSON.stringify(data)}\n`);
-        const ofertasTexto = Array.isArray(data?.ofertas)
-          ? data.ofertas.map((o) => o.descripcion).join("\n")
-          : "";
-
-        if (!ofertasTexto) throw new Error("Sin descripciones");
-
-        await templates["ofertas_dia"](from, ofertasTexto);
-      } catch (err) {
-        console.error("Error obteniendo ofertas_dia:", err.message);
-        fs.appendFileSync(logPath, `${new Date().toISOString()} - ERROR OFERTAS_DIA: ${err.message}\n`);
-        await sendTextMessage(from, "No se pudo cargar el menú u ofertas.");
-      }
+      await enviarPlantillaDesdeAPI({
+        url: "http://localhost:3000/api/ofertas",
+        templateName: "ofertas_dia",
+        from,
+      });
     } else if (btnPayload === "salir") {
       await sendTextMessage(from, "¡Gracias por visitarnos!");
     }
@@ -83,61 +103,4 @@ async function handleIncomingMessage(payload) {
 }
 
 
-// Función para manejar "menu dia"
-async function handleOrdenMenu(from) {
-  const url = 'https://grp-ia.com/bitacora-residentes/menu.php';
-  try {
-    const { data } = await axios.get(url);
-
-    if (!data || !Array.isArray(data.menu)) {
-      fs.appendFileSync(
-        logPath,
-        `❌ Error fetching menu: Formato inesperado: 'menu' no es arreglo o está ausente\n${JSON.stringify(data)}\n`
-      );
-      throw new Error("Formato inesperado: 'menu' no es arreglo o está ausente");
-    }
-
-    fs.appendFileSync(logPath, `${url}\n${JSON.stringify(data)}\n`);
-    const menuItems = data.menu
-      .map(p => `${p.nombre} - $${Number(p.precio).toFixed(2)}`)
-      .join(' | ');
-    await templates["menu_hoy"](from, menuItems);
-  } catch (err) {
-    console.error('❌ Error fetching menu:', err.message);
-    const resp = err.response ? JSON.stringify(err.response.data) : '';
-    fs.appendFileSync(
-      logPath,
-      `❌ Error fetching menu: ${err.message}\n${resp}\n`
-    );
-    await enviarPlantillaErrorGenerico(from, 'No pudimos consultar el menú en este momento.');
-  }
-}
-
-// Función para manejar "ofertas"
-async function handleOrdenOferta(from) {
-  const url = 'https://grp-ia.com/bitacora-residentes/ofertas.php';
-  try {
-    const { data } = await axios.get(url);
-
-    if (!data || !Array.isArray(data.ofertas)) {
-      fs.appendFileSync(
-        logPath,
-        `❌ Error fetching ofertas: Formato inesperado: 'ofertas' no es arreglo o está ausente\n${JSON.stringify(data)}\n`
-      );
-      throw new Error("Formato inesperado: 'ofertas' no es arreglo o está ausente");
-    }
-
-    fs.appendFileSync(logPath, `${url}\n${JSON.stringify(data)}\n`);
-    const ofertasItems = data.ofertas.map(o => o.descripcion).join(' | ');
-    await templates["ofertas_dia"](from, ofertasItems);
-  } catch (err) {
-    console.error('❌ Error fetching ofertas:', err.message);
-    const resp = err.response ? JSON.stringify(err.response.data) : '';
-    fs.appendFileSync(
-      logPath,
-      `❌ Error fetching ofertas: ${err.message}\n${resp}\n`
-    );
-    await enviarMensajeTexto(from, 'No hay ofertas disponibles.');
-  }
-}
 module.exports = handleIncomingMessage;

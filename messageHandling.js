@@ -16,61 +16,43 @@ async function handleIncomingMessage(data) {
   );
 
   try {
-    const message = data?.entry?.[0]?.changes?.[0]?.value?.messages?.[0];
-    if (!message) {
-      fs.appendFileSync(
-        'debug_post_log.txt',
-        `${new Date().toISOString()} - No se encontraron mensajes\n`
-      );
-      return;
-    }
+    for (const entry of data.entry || []) {
+      for (const change of entry.changes || []) {
+        const value = change.value || {};
+        if (!Array.isArray(value.messages)) {
+          continue;
+        }
 
-    const from = message.from;
-    const text = message.text?.body?.toLowerCase() || "";
-    const buttonReply = message.interactive?.button_reply?.id?.toLowerCase() || "";
+        const message = value.messages[0];
+        if (!message) {
+          continue;
+        }
 
-    console.log("Mensaje recibido:", text);
+        const from = message.from;
+        let text = "";
 
+        if (message.type === "text") {
+          text = message.text?.body?.toLowerCase() || "";
+        } else if (message.type === "interactive" && message.interactive?.button_reply?.title) {
+          text = message.interactive.button_reply.title.toLowerCase();
+        } else {
+          continue;
+        }
 
-    // Palabras clave
-    const palabrasClaveSaludo = [
-      "hola", "hi", "buen día", "buenos días", "hello", "qué tal", "buenas tardes",
-      "buenas noches", "saludos", "hey", "cómo estás", "qué onda",
-    ];
+        console.log("Mensaje recibido:", text);
 
-    let action = "";
-
-    // Determinar acción
-    if (palabrasClaveSaludo.some((saludo) => text.includes(saludo))) {
-      action = "saludo";
-    } else if (text.trim() == "menu" || text.includes("ver menu de hoy") || buttonReply === "btn_menu_hoy") {
-      action = "menu_hoy";
-    } else if (text.trim() == "ofertas" || text.includes("ver ofertas del dia") || buttonReply === "btn_ofertas_dia") {
-      action = "ofertas_dia";
-    } else if (text.includes("salir") || buttonReply === "btn_salir") {
-      action = "salir";
-    }
-
-    // Procesar acción
-    switch (action) {
-      case "saludo":
-        await enviarPlantillaWhatsApp(from, "menu_inicio");
-        break;
-
-      case "menu_hoy":
-        await handleOrdenMenu(from);
-        break;
-
-      case "ofertas_dia":
-        await handleOrdenOferta(from);
-        break;
-
-      case "salir":
-        await enviarMensajeTexto(from, "Gracias por tu visita. ¡Hasta pronto!");
-        break;
-
-      default:
-        console.log("No se encontró una acción correspondiente.");
+        if (text.includes("hola") || text.includes("buenas") || text.includes("hey")) {
+          await enviarPlantillaWhatsApp(from, "menu_inicio");
+        } else if (text.includes("menu")) {
+          await handleOrdenMenu(from);
+        } else if (text.includes("oferta")) {
+          await handleOrdenOferta(from);
+        } else if (text.includes("salir")) {
+          await enviarMensajeTexto(from, "Gracias por tu visita. ¡Hasta pronto!");
+        } else {
+          console.log("No se encontró una acción correspondiente.");
+        }
+      }
     }
 
     fs.appendFileSync(

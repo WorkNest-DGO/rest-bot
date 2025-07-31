@@ -1,5 +1,6 @@
-const fs = require('fs');
-const axios = require('axios');
+const fs = require("fs");
+const path = require("path");
+const axios = require("axios");
 const {
   templates,
   enviarPlantillaWhatsApp,
@@ -10,6 +11,7 @@ const {
 // Aliases para mayor claridad
 const sendTemplateMessage = enviarPlantillaWhatsApp;
 const sendTextMessage = enviarMensajeTexto;
+const logPath = path.join(__dirname, "logs", "api_log.txt");
 
 async function handleIncomingMessage(payload) {
   // Log de la solicitud entrante para depuración
@@ -45,30 +47,34 @@ async function handleIncomingMessage(payload) {
     if (btnPayload === "ver menu de hoy") {
       try {
         const { data } = await axios.get("http://localhost:3000/api/menu_hoy");
+        fs.appendFileSync(logPath, `${new Date().toISOString()} - MENU_HOY: ${JSON.stringify(data)}\n`);
         const menuTexto = Array.isArray(data?.menu)
           ? data.menu.map((m) => m.descripcion).join("\n")
           : "";
 
-        if (!menuTexto) throw new Error("Formato inesperado");
+        if (!menuTexto) throw new Error("Sin descripciones");
 
         await templates["menu_hoy"](from, menuTexto);
       } catch (err) {
         console.error("Error obteniendo menu_hoy:", err.message);
-        await sendTextMessage(from, "No se pudo cargar el menú.");
+        fs.appendFileSync(logPath, `${new Date().toISOString()} - ERROR MENU_HOY: ${err.message}\n`);
+        await sendTextMessage(from, "No se pudo cargar el menú u ofertas.");
       }
     } else if (btnPayload === "ver ofertas del dia") {
       try {
         const { data } = await axios.get("http://localhost:3000/api/ofertas");
+        fs.appendFileSync(logPath, `${new Date().toISOString()} - OFERTAS_DIA: ${JSON.stringify(data)}\n`);
         const ofertasTexto = Array.isArray(data?.ofertas)
           ? data.ofertas.map((o) => o.descripcion).join("\n")
           : "";
 
-        if (!ofertasTexto) throw new Error("Formato inesperado");
+        if (!ofertasTexto) throw new Error("Sin descripciones");
 
         await templates["ofertas_dia"](from, ofertasTexto);
       } catch (err) {
         console.error("Error obteniendo ofertas_dia:", err.message);
-        await sendTextMessage(from, "No se pudo cargar las ofertas.");
+        fs.appendFileSync(logPath, `${new Date().toISOString()} - ERROR OFERTAS_DIA: ${err.message}\n`);
+        await sendTextMessage(from, "No se pudo cargar el menú u ofertas.");
       }
     } else if (btnPayload === "salir") {
       await sendTextMessage(from, "¡Gracias por visitarnos!");
@@ -85,13 +91,13 @@ async function handleOrdenMenu(from) {
 
     if (!data || !Array.isArray(data.menu)) {
       fs.appendFileSync(
-        'api_log.txt',
+        logPath,
         `❌ Error fetching menu: Formato inesperado: 'menu' no es arreglo o está ausente\n${JSON.stringify(data)}\n`
       );
       throw new Error("Formato inesperado: 'menu' no es arreglo o está ausente");
     }
 
-    fs.appendFileSync('api_log.txt', `${url}\n${JSON.stringify(data)}\n`);
+    fs.appendFileSync(logPath, `${url}\n${JSON.stringify(data)}\n`);
     const menuItems = data.menu
       .map(p => `${p.nombre} - $${Number(p.precio).toFixed(2)}`)
       .join(' | ');
@@ -100,7 +106,7 @@ async function handleOrdenMenu(from) {
     console.error('❌ Error fetching menu:', err.message);
     const resp = err.response ? JSON.stringify(err.response.data) : '';
     fs.appendFileSync(
-      'api_log.txt',
+      logPath,
       `❌ Error fetching menu: ${err.message}\n${resp}\n`
     );
     await enviarPlantillaErrorGenerico(from, 'No pudimos consultar el menú en este momento.');
@@ -115,20 +121,20 @@ async function handleOrdenOferta(from) {
 
     if (!data || !Array.isArray(data.ofertas)) {
       fs.appendFileSync(
-        'api_log.txt',
+        logPath,
         `❌ Error fetching ofertas: Formato inesperado: 'ofertas' no es arreglo o está ausente\n${JSON.stringify(data)}\n`
       );
       throw new Error("Formato inesperado: 'ofertas' no es arreglo o está ausente");
     }
 
-    fs.appendFileSync('api_log.txt', `${url}\n${JSON.stringify(data)}\n`);
+    fs.appendFileSync(logPath, `${url}\n${JSON.stringify(data)}\n`);
     const ofertasItems = data.ofertas.map(o => o.descripcion).join(' | ');
     await templates["ofertas_dia"](from, ofertasItems);
   } catch (err) {
     console.error('❌ Error fetching ofertas:', err.message);
     const resp = err.response ? JSON.stringify(err.response.data) : '';
     fs.appendFileSync(
-      'api_log.txt',
+      logPath,
       `❌ Error fetching ofertas: ${err.message}\n${resp}\n`
     );
     await enviarMensajeTexto(from, 'No hay ofertas disponibles.');

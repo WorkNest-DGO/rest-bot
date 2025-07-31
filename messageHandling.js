@@ -17,21 +17,14 @@ module.exports = async (req, res) => {
   );
 
   try {
-    const entry = data?.entry?.[0]?.changes?.[0];
-    if (!entry?.value?.messages || !Array.isArray(entry.value.messages)) {
-      return res.status(400).send("No se encontraron mensajes.");
-    }
+    const message = data?.entry?.[0]?.changes?.[0]?.value?.messages?.[0];
+    if (!message) return res.status(400).send("No se encontraron mensajes.");
 
-    const message = entry.value.messages[0];
     const from = message.from;
-
-    let text = "";
-    if (message.type === "text") {
-      text = message.text.body.toLowerCase();
-      console.log("Mensaje recibido:", text);
-    }
-
+    const text = message.text?.body?.toLowerCase() || "";
     const buttonReply = message.interactive?.button_reply?.id?.toLowerCase() || "";
+
+    console.log("Mensaje recibido:", text);
 
 
     // Palabras clave

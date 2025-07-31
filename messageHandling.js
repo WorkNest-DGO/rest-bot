@@ -7,16 +7,16 @@ const {
   enviarMensajeTexto,
 } = require("./whatsappTemplates");
 
-async function handleIncomingMessage(data) {
+async function handleIncomingMessage(payload) {
 
   // Log de la solicitud entrante para depuración
   fs.appendFileSync(
     "debug_post_log.txt",
-    `${new Date().toISOString()} - POST Request: ${JSON.stringify(data)}\n`
+    `${new Date().toISOString()} - POST Request: ${JSON.stringify(payload)}\n`
   );
-if (!payload.entry || !Array.isArray(payload.entry)) return;
+  if (!payload.entry || !Array.isArray(payload.entry)) return;
   try {
-    for (const entry of data.entry || []) {
+    for (const entry of payload.entry || []) {
       for (const change of entry.changes || []) {
         const value = change.value || {};
         if (!Array.isArray(value.messages)) {

@@ -10,10 +10,24 @@ router.post('/webhook', async (req, res) => {
     'debug_payload_log.txt',
     new Date().toISOString() + ' - Payload Entrante: ' + JSON.stringify(body, null, 2) + '\n'
   );
-  if (body.object === 'whatsapp') {
-    await handleIncomingMessage(body);
+router.post("/webhook", async (req, res) => {
+  const payload = req.body;
+
+  // Permite manejar ambos tipos de objetos
+  if (
+    payload.object === "whatsapp" ||
+    payload.object === "whatsapp_business_account"
+  ) {
+    try {
+      await handleIncomingMessage(payload);
+    } catch (err) {
+      console.error("❌ Error en handleIncomingMessage:", err);
+    }
   }
+
   res.sendStatus(200);
+});
+
 });
 
 module.exports = router;

@@ -23,6 +23,38 @@ async function handleIncomingMessage(data) {
           continue;
         }
 
+        // Registro de todos los mensajes entrantes
+        for (const msg of value.messages) {
+          const type = msg.type || "unknown";
+          let contenido = "";
+
+          if (type === "text") {
+            contenido = msg.text?.body || "";
+          } else if (type === "interactive") {
+            if (msg.interactive?.button_reply?.title) {
+              contenido = msg.interactive.button_reply.title;
+            } else if (msg.interactive?.list_reply?.title) {
+              contenido = msg.interactive.list_reply.title;
+            }
+          } else if (type === "image") {
+            contenido = "imagen recibida";
+          } else if (type === "audio") {
+            contenido = "audio recibido";
+          } else if (type === "video") {
+            contenido = "video recibido";
+          } else if (type === "document") {
+            contenido = "documento recibido";
+          } else if (type === "sticker") {
+            contenido = "sticker recibido";
+          } else {
+            contenido = `${type} recibido`;
+          }
+
+          const logLine = `${new Date().toISOString()} - \ud83d\udce9 Mensaje del usuario (type: ${type}): "${contenido}"\n`;
+          fs.appendFileSync("debug_payload_log.txt", logLine);
+          console.log(`\ud83d\udce9 Mensaje del usuario (type: ${type}): "${contenido}"`);
+        }
+
         const message = value.messages[0];
         if (!message) {
           continue;

@@ -46,7 +46,7 @@ async function handleIncomingMessage(payload) {
     const btnPayload = message.button.payload.toLowerCase();
     if (btnPayload === "ver menu de hoy") {
       try {
-        const { data } = await axios.get("http://localhost:3000/api/menu_hoy");
+        const { data } = await axios.get("https://grp-ia.com/bitacora-residentes/menu.php");
         fs.appendFileSync(logPath, `${new Date().toISOString()} - MENU_HOY: ${JSON.stringify(data)}\n`);
         const menuTexto = Array.isArray(data?.menu)
           ? data.menu.map((m) => m.descripcion).join("\n")
@@ -62,7 +62,7 @@ async function handleIncomingMessage(payload) {
       }
     } else if (btnPayload === "ver ofertas del dia") {
       try {
-        const { data } = await axios.get("http://localhost:3000/api/ofertas");
+        const { data } = await axios.get("https://grp-ia.com/bitacora-residentes/ofertas.php");
         fs.appendFileSync(logPath, `${new Date().toISOString()} - OFERTAS_DIA: ${JSON.stringify(data)}\n`);
         const ofertasTexto = Array.isArray(data?.ofertas)
           ? data.ofertas.map((o) => o.descripcion).join("\n")

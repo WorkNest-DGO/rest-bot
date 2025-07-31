@@ -3,7 +3,7 @@ const bodyParser = require("body-parser");
 const cors = require("cors");
 const fs = require("fs");
 const verifyWebhook = require("./webhookVerification");
-const webhookRoutes = require("./webhook");
+const webhookRouter = require("./webhook");
 
 const app = express();
 const PORT =  3001;
@@ -15,8 +15,8 @@ app.use(bodyParser.json());
 // Ruta de verificación (GET)
 app.get("/webhook", verifyWebhook);
 
-// Ruta de recepción de mensajes (POST)
-app.use("/webhook", webhookRoutes);
+// Rutas de webhook
+app.use("/", webhookRouter);
 
 app.listen(PORT, () => {
   console.log(`Webhook listening on port ${PORT}`);

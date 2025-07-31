@@ -38,20 +38,44 @@ async function handleIncomingMessage(data) {
         } else {
           continue;
         }
-
+   // Palabras clave
+    const palabrasClaveSaludo = [
+      "hola", "hi", "buen día", "buenos días", "hello", "qué tal", "buenas tardes",
+      "buenas noches", "saludos", "hey", "cómo estás", "qué onda",
+    ];
         console.log("Mensaje recibido:", text);
 
-        if (text.includes("hola") || text.includes("buenas") || text.includes("hey")) {
-          await enviarPlantillaWhatsApp(from, "menu_inicio");
-        } else if (text.includes("menu")) {
-          await handleOrdenMenu(from);
-        } else if (text.includes("oferta")) {
-          await handleOrdenOferta(from);
-        } else if (text.includes("salir")) {
-          await enviarMensajeTexto(from, "Gracias por tu visita. ¡Hasta pronto!");
+    if (palabrasClaveSaludo.some((saludo) => text.includes(saludo))) {
+      action = "saludo";
+        } else if (text.includes("menu")|| buttonReply === "btn_menu_hoy") {
+           action = "menu_hoy";
+        } else if (text.includes("oferta"|| buttonReply === "btn_ofertas_dia")) {
+          action = "ofertas_dia";
+        } else if (text.includes("salir"|| buttonReply === "btn_salir")) {
+         action = "salir";
         } else {
           console.log("No se encontró una acción correspondiente.");
         }
+switch (action) {
+      case "saludo":
+        await enviarPlantillaWhatsApp(from, "menu_inicio");
+        break;
+      case "menu_hoy":
+         await handleOrdenMenu(from);
+        break;
+
+      case "ofertas_dia":
+         await handleOrdenOferta(from);
+        break;
+
+      case "salir":
+         await enviarMensajeTexto(from, "Gracias por tu visita. ¡Hasta pronto!");
+        break;
+
+      default:
+        console.log("No se encontró una acción correspondiente.");
+    }
+
       }
     }
 
